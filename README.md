@@ -13,6 +13,15 @@ It also features a basic graphic editor: users can place pieces on the board usi
 CuteFen can generate an A4-sized image containing all desired diagrams, or generate a separate image for each diagram.
 CuteFen also allows saving the form's state to a text file.
 
+## Use
+
+-Make sure to have Python3 installed on your system
+-Clone this depot
+-Install dependencies by running the following line:
+  pip install -r requirements.txt
+-Run the program:
+  python3 main.py
+
 ## Dependencies
 
 This program uses the following libraries:
@@ -38,6 +47,15 @@ Le programme se présente sous la forme d'un formulaire permettant de détermine
 Il dispose également d'un éditeur graphique aux fonctionnalités basiques: disposition de pièces à la souris, ajout de flèches, croix ou points sur le plateau.
 CuteFen permet de générer une image de format A4 contenant tous les diagrammes souhaités, ou bien de générer une image séparée pour chaque diagramme.
 CuteFen permet également de sauvegarder l'état du formulaire dans un fichier texte.
+
+## Utilisation
+
+-Assurez vous d'avoir installé Python3 sur votre machine
+-Clonez ce dépot
+-Installez les dépendances en utilisant la commande suivante:
+  pip install -r requirements.txt
+-Lancez le programme:
+  python3 main.py
 
 ## Dépendances
 
