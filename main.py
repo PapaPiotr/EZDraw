@@ -37,10 +37,10 @@ class ViewDialog(QDialog):
 
         self.label = QLabel()
         if self.parent().parent().info["format"] == "portrait":
-            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((504, 713))))
-            self.label.setFixedSize(504, 713)
+            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((378, 534))))
+            self.label.setFixedSize(378, 534)
             self.label.setPixmap(pixmap)
-            self.setFixedSize(524,775)
+            self.setFixedSize(400, 596)
         else:
             pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((891, 630))))
             self.label.setFixedSize(891, 630)
