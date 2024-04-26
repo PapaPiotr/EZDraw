@@ -40,7 +40,7 @@ class ViewDialog(QDialog):
             pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((378, 534))))
             self.label.setFixedSize(378, 534)
             self.label.setPixmap(pixmap)
-            self.setFixedSize(400, 596)
+            self.setFixedSize(400,596)
         else:
             pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((891, 630))))
             self.label.setFixedSize(891, 630)
@@ -188,6 +188,7 @@ class EditDialog(QDialog):
         self.empty_pos.id = 1
         self.save_pos = QPushButton("Sauvegarder la position")
         self.save_pos.clicked.connect(self.pos_click)
+        self.save_pos.id = 3
         self.submit = QPushButton("Valider")
         self.submit.id = 'edit'
         self.submit.clicked.connect(self.submit_click)
@@ -725,55 +726,44 @@ class FormDialog(QDialog):
                 if not re.search('\.txt$', fileName):
                     fileName += ".txt"
                 with open(fileName, "w") as file:
-                    file.write("$title_state|")
+                    file.write("title_state,")
                     file.write(str(self.parent().info["title_state"]) + "|")
-                    file.write("$title_text|")
+                    file.write("title_text|")
                     file.write(self.parent().info["title_text"] + "|")
-                    file.write("$num_state|")
+                    file.write("num_state,")
                     file.write(str(self.parent().info["num_state"]) + "|")
-                    file.write("$num_value|")
+                    file.write("num_value,")
                     file.write(str(self.parent().info["num_value"]) + "|")
-                    file.write("$index_state|")
+                    file.write("index_state,")
                     file.write(str(self.parent().info["index_state"]) + "|")
-                    file.write("$index_value|")
+                    file.write("index_value,")
                     file.write(str(self.parent().info["index_value"]) + "|")
-                    file.write("$color_state|")
+                    file.write("color_state,")
                     file.write(str(self.parent().info["color_state"]) + "|")
-                    file.write("$format|")
+                    file.write("format|")
                     file.write(self.parent().info["format"] + "|")
-                    file.write("$flip_state|")
+                    file.write("flip_state,")
                     file.write(str(self.parent().info["flip_state"]) + "|")
-                    file.write("$legend_state|")
+                    file.write("legend_state,")
                     file.write(str(self.parent().info["legend_state"]) + "|")
-                    file.write("$col_value|")
+                    file.write("col_value,")
                     file.write(str(self.parent().info["col_value"]) + "|")
-                    file.write("$diag_value|")
+                    file.write("diag_value,")
                     file.write(str(self.parent().info["diag_value"]) + "|")
-                    file.write("$margin_value|")
+                    file.write("margin_value,")
                     file.write(str(self.parent().info["margin_value"]) + "|")
-                    file.write("$coord_state|")
+                    file.write("coord_state,")
                     file.write(str(self.parent().info["coord_state"]) + "|")
-                    file.write("$down_state|")
+                    file.write("down_state,")
                     file.write(str(self.parent().info["down_state"]) + "|")
-                    file.write("$up_state|")
+                    file.write("up_state,")
                     file.write(str(self.parent().info["up_state"]) + "|")
-                    file.write("$left_state|")
+                    file.write("left_state,")
                     file.write(str(self.parent().info["left_state"]) + "|")
-                    file.write("$right_state|")
+                    file.write("right_state,")
                     file.write(str(self.parent().info["right_state"]) + "|")
                     for fen, leg, sym in zip(self.parent().info["trimmed_fens"],self.parent().info["trimmed_legends"],self.parent().info["trimmed_symbols"]):
                         file.write( '\n' + fen + '|' + leg + '|' + sym)
-
-#                   for fen in self.parent().info["trimmed_fens"]:
-#                       file.write(fen + '|')
-#                   file.write("$legends|")
-#                   for leg in self.parent().info["trimmed_legends"]:
-#                       file.write(leg + '|')
-#                   file.write("$symbols|")
-#                   for sym in self.parent().info["trimmed_symbols"]:
-#                       file.write(sym + '|')
-                     
-		    
 
             elif self.sender().id == "submit":
                 # vérifie que la liste contienne au moins un fen
@@ -1207,30 +1197,33 @@ class MainWindow(QMainWindow):
         form.exec()
 
     def click_load(self):
+        lines_value = 0
         fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","Text Files (*.txt)")
+
         with open(fileName, 'r') as file:
-            lines = file.read().split('$')
-            for line in lines:
-                fields = line.split('|')
-                if re.search('state', fields[0]):
-                    if fields[1] == 'True':
-                        self.info[fields[0]] = True
-                    else:
-                        self.info[fields[0]] = False
-                elif re.search('value', fields[0]):
-                    self.info[fields[0]] = int(fields[1])
-                elif fields[0] in ['fens','legends','symbols']:
-                    i = 0
-                    j = 1
-                    for field in fields:
-                        i += 1
-                    while j < i:
-                        self.info[fields[0]][j-1] = fields[j]
-                        j += 1
-                elif fields[0] != '':
-                    self.info[fields[0]] = fields[1]
+            lines = file.read().split('\n')
+            for l in lines:
+                lines_value += 1
+            lines_value -= 1
 
-
+            fields = lines[0].split('|')
+            for field in fields:
+                f = field.split(',')
+                if re.search('state', f[0]):
+                   if f[1] == 'True':
+                        self.info[f[0]] = True
+                   else: 
+                        self.info[f[0]] = False
+                elif re.search('value', f[0]):
+                    self.info[f[0]] = int(f[1])
+            
+            i = 1
+            while i <= lines_value:
+                line = lines[i].split('|')
+                self.info['fens'][i-1]=line[0]
+                self.info['legends'][i-1]=line[1]
+                self.info['symbols'][i-1]=line[2]
+                i += 1
 
             self.actualize()
             self.click_form()
