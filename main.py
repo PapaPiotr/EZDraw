@@ -764,6 +764,18 @@ class FormDialog(QDialog):
                     file.write(str(self.parent().info["right_state"]) + "|")
                     for fen, leg, sym in zip(self.parent().info["trimmed_fens"],self.parent().info["trimmed_legends"],self.parent().info["trimmed_symbols"]):
                         file.write( '\n' + fen + '|' + leg + '|' + sym)
+                    for arr in self.parent().info["arrows"]:
+                        arrows_num = 0
+                        for a in arr:
+                            arrows_num += 1
+                        i = 1
+                        if arrows_num != 0:
+                            file.write('|')
+                        for a in arr:
+                            file.write(a[0] + ' ' + str(a[1]) + ' ' + str(a[2]))
+                            if i < arrows_num:
+                                file.write(',')
+                            i += 1
 
             elif self.sender().id == "submit":
                 # vérifie que la liste contienne au moins un fen
@@ -1223,6 +1235,16 @@ class MainWindow(QMainWindow):
                 self.info['fens'][i-1]=line[0]
                 self.info['legends'][i-1]=line[1]
                 self.info['symbols'][i-1]=line[2]
+                fields_num = 0
+                for l in line:
+                    fields_num += 1
+
+                if fields_num > 3:
+                    arrows = line[3].split(',')
+                    print(arrows)
+                    for arrow in arrows:
+                        arr = arrow.split(' ')
+                        self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
                 i += 1
 
             self.actualize()
