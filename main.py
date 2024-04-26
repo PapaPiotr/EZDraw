@@ -444,13 +444,12 @@ class EditDialog(QDialog):
         # blit_pos récupère le rang de la case cliquée (de 0 à 63)
         blit_pos = int((((blit_x/75)+1) + (blit_y/75) * 8)-1)
        
-        if self.stack_layout.currentIndex() == 0:
-            # déplace une pièce
-            if event.button() == Qt.MouseButton.MiddleButton:
-                self.ext_fen = self.ext_fen[:blit_pos] + self.dragged_piece + self.ext_fen[blit_pos+1:]
-                
-                self.refresh()
-                self.setCursor(Qt.CursorShape.ArrowCursor)
+        # déplace une pièce
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.ext_fen = self.ext_fen[:blit_pos] + self.dragged_piece + self.ext_fen[blit_pos+1:]
+            
+            self.refresh()
+            self.setCursor(Qt.CursorShape.ArrowCursor)
 
         elif self.stack_layout.currentIndex() == 2:
             # déssine une flèche
