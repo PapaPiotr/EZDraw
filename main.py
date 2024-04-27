@@ -1,6 +1,7 @@
 from ctypes import alignment
 import sys
 import re
+import os
 
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
@@ -33,7 +34,6 @@ from fonctions import submit, test, unpack_fen, flip_fen, repack_fen, flip_sym, 
 class ViewDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-
 
         self.label = QLabel()
         if self.parent().parent().info["format"] == "portrait":
@@ -75,14 +75,14 @@ class ViewDialog(QDialog):
         if self.sender().id == "page":
             fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
             if fileName:
-                if not re.search('\.png$', fileName):
+                if not re.search('[.]png$', fileName):
                     fileName += '.png'
                 self.parent().parent().info["page"].save(fileName)
 
         elif self.sender().id == "diags":
             fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
             if fileName:
-                if re.search('\.png$', fileName):
+                if re.search('[.]png$', fileName):
                     fileName += '.png'
                 i = 0
                 for box in self.parent().parent().info["boxes"]:
@@ -98,6 +98,7 @@ class EditDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        current_dir = os.path.dirname(os.path.abspath(__file__))
         self.setFixedSize(820,690)
         def create_button(k,v):
             button = QPushButton()
@@ -129,34 +130,58 @@ class EditDialog(QDialog):
             self.printed_arrows = flip_arrows(self.printed_arrows)
 
         # creation de l'image du plateau
-        self.board_img = Image.open('board/empty_board.png')
+        board_dir = os.path.join(current_dir, 'board')
+        empty_board_path = os.path.join(board_dir, 'empty_board.png')
+        self.board_img = Image.open(empty_board_path)
         self.board_img = self.board_img.resize((600,600))
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
+        pieces_dir = os.path.join(current_dir, 'pieces')
         self.buttons = list()
         self.infos = {}
-        self.infos["k"]='pieces/bK.png'
-        self.infos["q"]='pieces/bQ.png'
-        self.infos["b"]='pieces/bB.png'
-        self.infos["n"]='pieces/bN.png'
-        self.infos["r"]='pieces/bR.png'
-        self.infos["p"]='pieces/bP.png'
-        self.infos["K"]='pieces/wK.png'
-        self.infos["Q"]='pieces/wQ.png'
-        self.infos["B"]='pieces/wB.png'
-        self.infos["N"]='pieces/wN.png'
-        self.infos["R"]='pieces/wR.png'
-        self.infos["P"]='pieces/wP.png'
+        bK_path = os.path.join(pieces_dir, 'bK.png')
+        self.infos["k"]= bK_path
+        bQ_path = os.path.join(pieces_dir, 'bQ.png')
+        self.infos["q"]= bQ_path
+        bB_path = os.path.join(pieces_dir, 'bB.png')
+        self.infos["b"]= bB_path
+        bN_path = os.path.join(pieces_dir, 'bN.png')
+        self.infos["n"]= bN_path
+        bR_path = os.path.join(pieces_dir, 'bR.png')
+        self.infos["r"]= bR_path
+        bP_path = os.path.join(pieces_dir, 'bP.png')
+        self.infos["p"]= bP_path
+        wK_path = os.path.join(pieces_dir, 'wK.png')
+        self.infos["K"]= wK_path
+        wQ_path = os.path.join(pieces_dir, 'wQ.png')
+        self.infos["Q"]= wQ_path
+        wB_path = os.path.join(pieces_dir, 'wB.png')
+        self.infos["B"]= wB_path
+        wN_path = os.path.join(pieces_dir, 'wN.png')
+        self.infos["N"]= wN_path
+        wR_path = os.path.join(pieces_dir, 'wR.png')
+        self.infos["R"]= wR_path
+        wP_path = os.path.join(pieces_dir, 'wP.png')
+        self.infos["P"]= wP_path
 
-        self.infos["t"]='symbols/bt.png'
-        self.infos["y"]='symbols/by.png'
-        self.infos["g"]='symbols/bg.png'
-        self.infos["o"]='symbols/bo.png'
+        symbols_dir = os.path.join(current_dir, 'symbols')
+        bt_path = os.path.join(symbols_dir, 'bt.png')
+        self.infos["t"]= bt_path
+        by_path = os.path.join(symbols_dir, 'by.png')
+        self.infos["y"]= by_path
+        bg_path = os.path.join(symbols_dir, 'bg.png')
+        self.infos["g"]= bg_path
+        bo_path = os.path.join(symbols_dir, 'bo.png')
+        self.infos["o"]= bo_path
 
-        self.infos["T"]='symbols/wt.png'
-        self.infos["Y"]='symbols/wy.png'
-        self.infos["G"]='symbols/wg.png'
-        self.infos["O"]='symbols/wo.png'
+        wt_path = os.path.join(symbols_dir, 'wt.png')
+        self.infos["T"]= wt_path
+        wy_path = os.path.join(symbols_dir, 'wy.png')
+        self.infos["Y"]= wy_path
+        wg_path = os.path.join(symbols_dir, 'wg.png')
+        self.infos["G"]= wg_path
+        wo_path = os.path.join(symbols_dir, 'wo.png')
+        self.infos["O"]= wo_path
 
         # création des widget
         combo = QComboBox()
@@ -326,7 +351,7 @@ class EditDialog(QDialog):
         elif self.sender().id == 3:
             fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
             if fileName:
-                if not re.search('\.png$', fileName):
+                if not re.search('[.]png$', fileName):
                     fileName += '.png'
                 self.board_img.save(fileName)
 
@@ -503,7 +528,10 @@ class EditDialog(QDialog):
                     elif start_x > end_x:
                         width = start_x - end_x +1
                         direction = 4
-                arrow_name = 'arrows/' + str(direction) + str(width) + str(height) + '.png'
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                arrows_dir = os.path.join(current_dir, 'arrows')
+                arrow_name = os.path.join(arrows_dir, str(direction) + str(width) + str(height) + '.png')
+                print(arrow_name)
 
                 try:
                     # vérifie que la flèche correspondante existe
@@ -528,11 +556,14 @@ class EditDialog(QDialog):
 
     def refresh(self):
         # crée l'overlay sur lequel vont être imprimées les pièces
-        self.pieces_img = Image.open('board/empty1.png')
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        board_dir = os.path.join(current_dir, 'board')
+        empty1_path = os.path.join(board_dir, 'empty1.png')
+        self.pieces_img = Image.open(empty1_path)
         self.pieces_img = self.pieces_img.resize((600,600))
-        self.symbols_img = Image.open('board/empty1.png')
+        self.symbols_img = Image.open(empty1_path)
         self.symbols_img = self.symbols_img.resize((600,600))
-        self.arrows_img = Image.open('board/empty1.png')
+        self.arrows_img = Image.open(empty1_path)
         self.arrows_img = self.arrows_img.resize((600,600))
 
         # colle les pièces sur l'overlay
@@ -558,7 +589,8 @@ class EditDialog(QDialog):
             self.arrows_img.paste(img, (arr[1], arr[2]), img) 
 
         # réinitialise l'image du plateau vide
-        self.board_img = Image.open('board/empty_board.png')
+        empty_board_path = os.path.join(board_dir, 'empty_board.png')
+        self.board_img = Image.open(empty_board_path)
         self.board_img = self.board_img.resize((600,600))
         # colle l'overlay sur le plateau
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
@@ -722,7 +754,7 @@ class FormDialog(QDialog):
 
             if self.sender().id == "save":
                 fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Text Files (*.txt)")
-                if not re.search('\.txt$', fileName):
+                if not re.search('[.]txt$', fileName):
                     fileName += ".txt"
                 with open(fileName, "w") as file:
                     file.write("title_state,")
@@ -818,7 +850,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Dyhagram")
+        self.setWindowTitle("CuteFen")
 
         i = 0
 
