@@ -580,8 +580,11 @@ def draw_index(i_state, index, c_state, color, w, h):
     img = Image.new('RGB', (w, h), 'white')
     draw = ImageDraw.Draw(img)
     if i_state:
-        img_size = font.getsize(index)
-        draw.text(((w-img_size[0])/2, (w-img_size[1])/2), index, font = font, fill = 'black')
+        img_size = font.getbbox(index)
+        draw.text(((w-img_size[2])/2, (w-img_size[3])/2), index, font = font, fill = 'black')
+
+
+
     if c_state:
         symbols_dir = os.path.join(current_dir, 'symbols')
         if color == 'b':
@@ -605,45 +608,58 @@ def draw_legend(legend, w, h, margin):
 
     img = Image.new('RGB', (w, h), 'white')
     draw = ImageDraw.Draw(img)
-    img_size = font.getsize(legend)
-    if img_size[0] > w:
+    img_size = font.getbbox(legend)
+    if img_size[2] > w:
         words = legend.split()
         i = 0
         j = 0
-        new_size = [0,0]
-        f_line_size = [0,0]
-        s_line_size = [0,0]
-        t_line_size = [0,0]
+        new_size = [0,0,0,0]
+        f_line_size = [0,0,0,0]
+        s_line_size = [0,0,0,0]
+        t_line_size = [0,0,0,0]
         string = ''
         first_line = ''
+        line_height = 0
 
         for word in words:
             i += 1
-        while j < i and new_size[0] < w:
+        while j < i and new_size[2] < w:
             first_line = string
             f_line_size = new_size
             string += words[j] + ' '
-            new_size = font.getsize(string)
+            new_size = font.getbbox(string)
+            if new_size[3] > line_height:
+                line_height = new_size[3]
             j += 1
-        string = words[j - 1] + ' '
-        new_size = [0,0]
-        while j < i and new_size[0] < w:
-            second_line = string + ' '
-            s_line_size = new_size
-            string += words[j] + ' '
-            new_size = font.getsize(string)
-            j += 1
-        third_line = words[j - 1] + ' '
-        while j < i:
-            third_line += words[j] + ' '
-            t_line_size = font.getsize(third_line)
-            j += 1
+        string = ''
+        draw.text(((w-f_line_size[2])/2, (0)), first_line, font = font, fill = 'black')
+        j -= 1
+        if new_size[2] >= w:
+            second_line = words[j - 1] + ' '
+            new_size = [0,0,0,0]
+            while j < i and new_size[2] < w:
+                second_line = string
+                s_line_size = new_size
+                string += words[j] + ' '
+                new_size = font.getbbox(string)
+                if new_size[3] > line_height:
+                    line_height = new_size[3]
+                j += 1
+            string = ''
+            draw.text(((w-s_line_size[2])/2, line_height), second_line, font = font, fill = 'black')
+            j -= 1
+        if new_size[2] >= w:
+            third_line = words[j - 1] + ' '
+            while j < i:
+                third_line += words[j] + ' '
+                t_line_size = font.getbbox(third_line)
+                if t_line_size[3] > line_height:
+                    line_height = t_line_size[3]
+                j += 1
+            draw.text(((w-t_line_size[2])/2, line_height * 2), third_line, font = font, fill = 'black')
 
-        draw.text(((w-f_line_size[0])/2, (0)), first_line, font = font, fill = 'black')
-        draw.text(((w-s_line_size[0])/2, s_line_size[1]+ 2), second_line, font = font, fill = 'black')
-        draw.text(((w-t_line_size[0])/2, t_line_size[1] * 2 + 4), third_line, font = font, fill = 'black')
     else:
-        draw.text(((w-img_size[0])/2, (h-img_size[1])/2), legend, font = font, fill = 'black')
+        draw.text(((w-img_size[2])/2, (h-img_size[3])/2), legend, font = font, fill = 'black')
     return(img)
 
 def draw_coord_h(w, h, flip, color):
@@ -668,8 +684,8 @@ def draw_coord_h(w, h, flip, color):
     i = 0
 
     while i < 8:
-        img_size = font.getsize(coords[i])
-        draw.text((((177-img_size[0])/2)+i*177, (177-img_size[1])/2), coords[i], font = font, fill = 'black')
+        img_size = font.getbbox(coords[i])
+        draw.text((((177-img_size[2])/2)+i*177, (177-img_size[3])/2), coords[i], font = font, fill = 'black')
         i += 1
     return(img)
 
@@ -695,8 +711,8 @@ def draw_coord_v(w, h, flip, color):
     i = 0
 
     while i < 8:
-        img_size = font.getsize(coords[i])
-        draw.text((((177-img_size[0])/2), ((177-img_size[1])/2)+i*177), coords[i], font = font, fill = 'black')
+        img_size = font.getbbox(coords[i])
+        draw.text((((177-img_size[2])/2), ((177-img_size[3])/2)+i*177), coords[i], font = font, fill = 'black')
         i += 1
     return(img)
 
@@ -754,15 +770,15 @@ def draw_page(orient, t_state, title, n_state, num, col, margin, boxes):
     if t_state:
         title_box = Image.new('RGB', (title_w, title_h), 'white')
         draw = ImageDraw.Draw(title_box)
-        img_size = title_font.getsize(title)
-        draw.text(((title_w - img_size[0])/2,(title_h - img_size[1])/2),title,font=title_font,fill='black')
+        img_size = title_font.getbbox(title)
+        draw.text(((title_w - img_size[2])/2,(title_h - img_size[3])/2),title,font=title_font,fill='black')
         page.paste(title_box, (0,0) )
 
     if n_state:
         num_box = Image.new('RGB', (num_w, num_h), 'white')
         draw = ImageDraw.Draw(num_box)
-        size = num_font.getsize(num)
-        draw.text(((num_w-size[0])/2,0),num,font=num_font,fill='black')
+        size = num_font.getbbox(num)
+        draw.text(((num_w-size[2])/2,0),num,font=num_font,fill='black')
         page.paste(num_box, (0, page_h - num_h))
 
     # dimentionnement des boîtes
