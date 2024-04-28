@@ -98,7 +98,7 @@ class EditDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.setFixedSize(820,690)
         def create_button(k,v):
             button = QPushButton()
@@ -130,13 +130,13 @@ class EditDialog(QDialog):
             self.printed_arrows = flip_arrows(self.printed_arrows)
 
         # creation de l'image du plateau
-        board_dir = os.path.join(current_dir, 'board')
-        empty_board_path = os.path.join(board_dir, 'empty_board.png')
+        self.board_dir = os.path.join(self.current_dir, 'board')
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.png')
         self.board_img = Image.open(empty_board_path)
         self.board_img = self.board_img.resize((600,600))
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
-        pieces_dir = os.path.join(current_dir, 'pieces')
+        pieces_dir = os.path.join(self.current_dir, 'pieces')
         self.buttons = list()
         self.infos = {}
         bK_path = os.path.join(pieces_dir, 'bK.png')
@@ -164,7 +164,7 @@ class EditDialog(QDialog):
         wP_path = os.path.join(pieces_dir, 'wP.png')
         self.infos["P"]= wP_path
 
-        symbols_dir = os.path.join(current_dir, 'symbols')
+        symbols_dir = os.path.join(self.current_dir, 'symbols')
         bt_path = os.path.join(symbols_dir, 'bt.png')
         self.infos["t"]= bt_path
         by_path = os.path.join(symbols_dir, 'by.png')
@@ -528,14 +528,14 @@ class EditDialog(QDialog):
                     elif start_x > end_x:
                         width = start_x - end_x +1
                         direction = 4
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                arrows_dir = os.path.join(current_dir, 'arrows')
-                arrow_name = os.path.join(arrows_dir, str(direction) + str(width) + str(height) + '.png')
-                print(arrow_name)
+                self.arrows_dir = os.path.join(self.current_dir, 'arrows')
+                arrow_name = str(direction) + str(width) + str(height) + '.png'
+                arrow_path = os.path.join(self.arrows_dir, arrow_name)
+
 
                 try:
                     # vérifie que la flèche correspondante existe
-                    self.arr_img = Image.open(arrow_name)
+                    self.arr_img = Image.open(arrow_path)
                     # teste si la même flèche est déjà trâcée
                     new_arrow = [arrow_name, img_x, img_y]
                     same_arrow = False
@@ -556,9 +556,7 @@ class EditDialog(QDialog):
 
     def refresh(self):
         # crée l'overlay sur lequel vont être imprimées les pièces
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        board_dir = os.path.join(current_dir, 'board')
-        empty1_path = os.path.join(board_dir, 'empty1.png')
+        empty1_path = os.path.join(self.board_dir, 'empty1.png')
         self.pieces_img = Image.open(empty1_path)
         self.pieces_img = self.pieces_img.resize((600,600))
         self.symbols_img = Image.open(empty1_path)
@@ -583,13 +581,15 @@ class EditDialog(QDialog):
 
         i = 0
         for arr in self.printed_arrows:
-            rs_x= int(arr[0][8])*75
-            rs_y= int(arr[0][9])*75
-            img = Image.open(arr[0]).resize((rs_x,rs_y))
+            rs_x= int(arr[0][1])*75
+            rs_y= int(arr[0][2])*75
+            img_path = os.path.join(self.arrows_dir, arr[0])
+            img = Image.open(img_path)
+            img = img.resize((rs_x,rs_y))
             self.arrows_img.paste(img, (arr[1], arr[2]), img) 
 
         # réinitialise l'image du plateau vide
-        empty_board_path = os.path.join(board_dir, 'empty_board.png')
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.png')
         self.board_img = Image.open(empty_board_path)
         self.board_img = self.board_img.resize((600,600))
         # colle l'overlay sur le plateau

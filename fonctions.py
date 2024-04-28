@@ -1,3 +1,4 @@
+import os
 import sys
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageQt import ImageQt
@@ -83,6 +84,7 @@ def submit(self, info):
 
 # draws the boards
     for fen, sym, arr in zip(ext_fens, syms, arrows):
+        print(arr)
         boards.append(draw_board(fen, sym, arr))
 
 
@@ -258,7 +260,8 @@ def flip_sym(sym):
 def flip_arrows(printed_arrows):
     rev_arrow = list()
     for arrow in printed_arrows:
-        a = arrow[0][7]
+        print(arrow)
+        a = arrow[0][0]
         if a == "1":
             flip_a = "9"
         elif a == "2":
@@ -276,12 +279,12 @@ def flip_arrows(printed_arrows):
         elif a == "9":
             flip_a = "1"
         # récupération du nouveau nom de la flèche
-        new_arrow = arrow[0][:7] + flip_a + arrow[0][8:]
+        new_arrow = flip_a + arrow[0][1:]
 
         # identification de la case qui servira d'origine après retournement
         new_o = list()
-        new_x = int(arrow[1])/75 + int(arrow[0][8])
-        new_y = int(arrow[2])/75 + int(arrow[0][9])
+        new_x = int(arrow[1])/75 + int(arrow[0][1])
+        new_y = int(arrow[2])/75 + int(arrow[0][2])
 
         new_o.append(new_x)
         new_o.append(new_y)
@@ -355,98 +358,145 @@ def draw_board(fen, sym, arr):
     for a in arr:
         arr_x = int(a[1]/75)*177
         arr_y = int(a[2]/75)*177
-        arr_img = Image.open(a[0]).resize((int(a[0][8])*177,int(a[0][9])*177))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        arrows_dir = os.path.join(current_dir, 'arrows')
+        arr_path = os.path.join(arrows_dir, a[0])
+        arr_img = Image.open(arr_path).resize((int(a[0][1])*177,int(a[0][2])*177))
         board.paste(arr_img,(arr_x,arr_y),arr_img)
     return(board)
 
 def draw_square(i, j, p, s):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    board_dir = os.path.join(current_dir, 'board')
+    ds_path = os.path.join(board_dir, 'ds.jpg')
+
+    pieces_dir = os.path.join(current_dir, 'pieces')
+    bP_path = os.path.join(pieces_dir, 'bP.png')
+    bR_path = os.path.join(pieces_dir, 'bR.png')
+    bN_path = os.path.join(pieces_dir, 'bN.png')
+    bB_path = os.path.join(pieces_dir, 'bB.png')
+    bK_path = os.path.join(pieces_dir, 'bK.png')
+    bQ_path = os.path.join(pieces_dir, 'bQ.png')
+    wP_path = os.path.join(pieces_dir, 'wP.png')
+    wR_path = os.path.join(pieces_dir, 'wR.png')
+    wN_path = os.path.join(pieces_dir, 'wN.png')
+    wB_path = os.path.join(pieces_dir, 'wB.png')
+    wK_path = os.path.join(pieces_dir, 'wK.png')
+    wQ_path = os.path.join(pieces_dir, 'wQ.png')
+
     if (i+j)%2 == 0:
         square_img = Image.new('RGB', (177, 177), 'white')
     else:
-        square_img = Image.open('board/ds.jpg')
+        square_img = Image.open(ds_path)
         if square_img.size != (177,177):
             square_img = square_img.resize((177,177))
 
     if p != '0':
         if p == 'p':
-            piece_img = Image.open("pieces/bP.png")
+            piece_img = Image.open(bP_path)
         elif p == 'r':  
-            piece_img = Image.open("pieces/bR.png")
+            piece_img = Image.open(bR_path)
         elif p == 'n':  
-            piece_img = Image.open("pieces/bN.png")
+            piece_img = Image.open(bN_path)
         elif p == 'b':  
-            piece_img = Image.open("pieces/bB.png")
+            piece_img = Image.open(bB_path)
         elif p == 'k':  
-            piece_img = Image.open("pieces/bK.png")
+            piece_img = Image.open(bK_path)
         elif p == 'q':  
-            piece_img = Image.open("pieces/bQ.png")
+            piece_img = Image.open(bQ_path)
         elif p == 'P':
-            piece_img = Image.open("pieces/wP.png")
+            piece_img = Image.open(wP_path)
         elif p == 'R':  
-            piece_img = Image.open("pieces/wR.png")
+            piece_img = Image.open(wR_path)
         elif p == 'N':  
-            piece_img = Image.open("pieces/wN.png")
+            piece_img = Image.open(wN_path)
         elif p == 'B':  
-            piece_img = Image.open("pieces/wB.png")
+            piece_img = Image.open(wB_path)
         elif p == 'K':  
-            piece_img = Image.open("pieces/wK.png")
+            piece_img = Image.open(wK_path)
         elif p == 'Q':  
-            piece_img = Image.open("pieces/wQ.png")
+            piece_img = Image.open(wQ_path)
         # 177 * 177 is the size of the default pieces pgn delivewhite with the program
         if piece_img.size != (177,177):
             piece_img = piece_img.resize((177,177))
         square_img.paste(piece_img, (0,0), piece_img)
 
 
+    symbols_dir = os.path.join(current_dir, 'symbols')
+    bz_path = os.path.join(symbols_dir, 'bz.png')
+    be_path = os.path.join(symbols_dir, 'be.png')
+    bd_path = os.path.join(symbols_dir, 'bd.png')
+    bc_path = os.path.join(symbols_dir, 'bc.png')
+    bx_path = os.path.join(symbols_dir, 'bx.png')
+    bw_path = os.path.join(symbols_dir, 'bw.png')
+    bs_path = os.path.join(symbols_dir, 'bs.png')
+    ba_path = os.path.join(symbols_dir, 'ba.png')
+    wz_path = os.path.join(symbols_dir, 'wz.png')
+    we_path = os.path.join(symbols_dir, 'we.png')
+    wd_path = os.path.join(symbols_dir, 'wd.png')
+    wc_path = os.path.join(symbols_dir, 'wc.png')
+    wx_path = os.path.join(symbols_dir, 'wx.png')
+    ww_path = os.path.join(symbols_dir, 'ww.png')
+    ws_path = os.path.join(symbols_dir, 'ws.png')
+    wa_path = os.path.join(symbols_dir, 'wa.png')
+    bt_path = os.path.join(symbols_dir, 'bt.png')
+    bo_path = os.path.join(symbols_dir, 'bo.png')
+    bg_path = os.path.join(symbols_dir, 'bg.png')
+    by_path = os.path.join(symbols_dir, 'by.png')
+    wt_path = os.path.join(symbols_dir, 'wt.png')
+    wo_path = os.path.join(symbols_dir, 'wo.png')
+    wg_path = os.path.join(symbols_dir, 'wg.png')
+    wy_path = os.path.join(symbols_dir, 'wy.png')
+
     if s != '0':
         if s == 'z':
-            sym_img = Image.open("symbols/bz.png")
+            sym_img = Image.open(bz_path)
         elif s == 'e':
-            sym_img = Image.open("symbols/be.png")
+            sym_img = Image.open(be_path)
         elif s == 'd':
-            sym_img = Image.open("symbols/bd.png")
+            sym_img = Image.open(bd_path)
         elif s == 'c':
-            sym_img = Image.open("symbols/bc.png")
+            sym_img = Image.open(bc_path)
         elif s == 'x':
-            sym_img = Image.open("symbols/bx.png")
+            sym_img = Image.open(bx_path)
         elif s == 'w':
-            sym_img = Image.open("symbols/bw.png")
+            sym_img = Image.open(bw_path)
         elif s == 's':
-            sym_img = Image.open("symbols/bs.png")
+            sym_img = Image.open(bs_path)
         elif s == 'a':
-            sym_img = Image.open("symbols/ba.png")
+            sym_img = Image.open(ba_path)
         elif s == 'Z':
-            sym_img = Image.open("symbols/wz.png")
+            sym_img = Image.open(wz_path)
         elif s == 'E':
-            sym_img = Image.open("symbols/we.png")
+            sym_img = Image.open(we_path)
         elif s == 'D':
-            sym_img = Image.open("symbols/wd.png")
+            sym_img = Image.open(wd_path)
         elif s == 'C':
-            sym_img = Image.open("symbols/wc.png")
+            sym_img = Image.open(wc_path)
         elif s == 'X':
-            sym_img = Image.open("symbols/wx.png")
+            sym_img = Image.open(wx_path)
         elif s == 'W':
-            sym_img = Image.open("symbols/ww.png")
+            sym_img = Image.open(ww_path)
         elif s == 'S':
-            sym_img = Image.open("symbols/ws.png")
+            sym_img = Image.open(ws_path)
         elif s == 'A':
-            sym_img = Image.open("symbols/wa.png")
+            sym_img = Image.open(wa_path)
         elif s == 't':
-            sym_img = Image.open("symbols/bt.png")
+            sym_img = Image.open(bt_path)
         elif s == 'o':
-            sym_img = Image.open("symbols/bo.png")
+            sym_img = Image.open(bo_path)
         elif s == 'g':
-            sym_img = Image.open("symbols/bg.png")
+            sym_img = Image.open(bg_path)
         elif s == 'y':
-            sym_img = Image.open("symbols/by.png")
+            sym_img = Image.open(by_path)
         elif s == 'T':
-            sym_img = Image.open("symbols/wt.png")
+            sym_img = Image.open(wt_path)
         elif s == 'O':
-            sym_img = Image.open("symbols/wo.png")
+            sym_img = Image.open(wo_path)
         elif s == 'G':
-            sym_img = Image.open("symbols/wg.png")
+            sym_img = Image.open(wg_path)
         elif s == 'Y':
-            sym_img = Image.open("symbols/wy.png")
+            sym_img = Image.open(wy_path)
         if sym_img.size != (177,177):
             sym_img = sym_img.resize((177,177))
         square_img.paste(sym_img, (0,0), sym_img)
@@ -522,7 +572,12 @@ def draw_box(board, i_state, index, l_state, legend, coord, down, up, left, righ
 def draw_index(i_state, index, c_state, color, w, h):
     fontsize = 130
     index = str(index)
-    font = ImageFont.truetype("fonts/FreeSerif.ttf", size = fontsize)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    fonts_dir = os.path.join(current_dir, 'fonts')
+    freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
+    font = ImageFont.truetype(freeSerif_path, size = fontsize)
+
 
     img = Image.new('RGB', (w, h), 'white')
     draw = ImageDraw.Draw(img)
@@ -530,10 +585,13 @@ def draw_index(i_state, index, c_state, color, w, h):
         img_size = font.getsize(index)
         draw.text(((w-img_size[0])/2, (w-img_size[1])/2), index, font = font, fill = 'black')
     if c_state:
+        symbols_dir = os.path.join(current_dir, 'symbols')
         if color == 'b':
-            color_img = Image.open("symbols/bDot.png")
+            bDot_path = os.path.join(symbols_dir, 'bDot.png')
+            color_img = Image.open(bDot_path)
         else:
-            color_img = Image.open("symbols/wDot.png")
+            wDot_path = os.path.join(symbols_dir, 'wDot.png')
+            color_img = Image.open(wDot_path)
         color_img = color_img.resize((120,120))
         color_img_size = color_img.size
         img.paste(color_img,(int((w-color_img_size[0])/2), int((w-color_img_size[1])/2)+w), color_img)
@@ -541,7 +599,11 @@ def draw_index(i_state, index, c_state, color, w, h):
 
 def draw_legend(legend, w, h, margin):
     fontsize = 113
-    font = ImageFont.truetype("fonts/FreeSerif.ttf", size = fontsize)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    fonts_dir = os.path.join(current_dir, 'fonts')
+    freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
+    font = ImageFont.truetype(freeSerif_path, size = fontsize)
 
     img = Image.new('RGB', (w, h), 'white')
     draw = ImageDraw.Draw(img)
@@ -588,7 +650,11 @@ def draw_legend(legend, w, h, margin):
 
 def draw_coord_h(w, h, flip, color):
     fontsize = 100
-    font = ImageFont.truetype("fonts/FreeSerif.ttf", size = fontsize)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    fonts_dir = os.path.join(current_dir, 'fonts')
+    freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
+    font = ImageFont.truetype(freeSerif_path, size = fontsize)
     coords = 'abcdefgh'
 
     if flip and color == 'b':
@@ -611,7 +677,11 @@ def draw_coord_h(w, h, flip, color):
 
 def draw_coord_v(w, h, flip, color):
     fontsize = 100
-    font = ImageFont.truetype("fonts/FreeSerif.ttf", size = fontsize)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    fonts_dir = os.path.join(current_dir, 'fonts')
+    freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
+    font = ImageFont.truetype(freeSerif_path, size = fontsize)
     coords = '87654321'
 
     if flip and color == 'b':
@@ -643,8 +713,12 @@ def draw_page(orient, t_state, title, n_state, num, col, margin, boxes):
     margin_bot = 0
     num = str(num)
     fontsize = 200
-    num_font = ImageFont.truetype("fonts/FreeSerif.ttf", size = 80)
-    title_font = ImageFont.truetype("fonts/FreeSerif.ttf", size = fontsize)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    fonts_dir = os.path.join(current_dir, 'fonts')
+    freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
+    num_font = ImageFont.truetype(freeSerif_path, size = 80)
+    title_font = ImageFont.truetype(freeSerif_path, size = fontsize)
 
     # définition du format de la page
     if orient == "portrait":
