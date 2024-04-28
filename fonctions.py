@@ -84,7 +84,6 @@ def submit(self, info):
 
 # draws the boards
     for fen, sym, arr in zip(ext_fens, syms, arrows):
-        print(arr)
         boards.append(draw_board(fen, sym, arr))
 
 
@@ -260,7 +259,6 @@ def flip_sym(sym):
 def flip_arrows(printed_arrows):
     rev_arrow = list()
     for arrow in printed_arrows:
-        print(arrow)
         a = arrow[0][0]
         if a == "1":
             flip_a = "9"

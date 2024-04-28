@@ -37,10 +37,10 @@ class ViewDialog(QDialog):
 
         self.label = QLabel()
         if self.parent().parent().info["format"] == "portrait":
-            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((378, 534))))
-            self.label.setFixedSize(378, 534)
+            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((473, 668))))
+            self.label.setFixedSize(473, 668)
             self.label.setPixmap(pixmap)
-            self.setFixedSize(400,596)
+            self.setFixedSize(493, 733)
         else:
             pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((891, 630))))
             self.label.setFixedSize(891, 630)
@@ -83,7 +83,7 @@ class ViewDialog(QDialog):
             fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
             if fileName:
                 if re.search('[.]png$', fileName):
-                    fileName += '.png'
+                    fileName += 'rpng'
                 i = 0
                 for box in self.parent().parent().info["boxes"]:
                     if self.parent().parent().info["index_state"]:
@@ -934,7 +934,7 @@ class MainWindow(QMainWindow):
 
         self.spin_pn = QSpinBox()
         self.spin_pn.setValue(1)
-        self.spin_pn.setFixedSize(QSize(40, 25))
+        self.spin_pn.setFixedSize(QSize(75, 25))
         self.spin_pn.id = "num_value"
         self.spin_pn.valueChanged.connect(self.change_value)
 
@@ -950,7 +950,7 @@ class MainWindow(QMainWindow):
 
         self.spin_index = QSpinBox()
         self.spin_index.setValue(1)
-        self.spin_index.setFixedSize(QSize(40, 25))
+        self.spin_index.setFixedSize(QSize(75, 25))
         self.spin_index.id = "index_value"
         self.spin_index.valueChanged.connect(self.change_value)
 
@@ -1018,7 +1018,7 @@ class MainWindow(QMainWindow):
         self.spin_col = QSpinBox()
         self.spin_col.setValue(1)
         self.spin_col.setRange(1, self.info["max_cols"])
-        self.spin_col.setFixedSize(QSize(55, 25))
+        self.spin_col.setFixedSize(QSize(75, 25))
         self.spin_col.id = "col_value"
         self.spin_col.valueChanged.connect(self.change_value)
 
@@ -1028,7 +1028,7 @@ class MainWindow(QMainWindow):
         self.spin_diag = QSpinBox()
         self.spin_diag.setValue(1)
         self.spin_diag.setRange(1, self.info["max_diags"])
-        self.spin_diag.setFixedSize(QSize(55, 25))
+        self.spin_diag.setFixedSize(QSize(75, 25))
         self.spin_diag.id = "diag_value"
         self.spin_diag.valueChanged.connect(self.change_value)
 
@@ -1038,7 +1038,7 @@ class MainWindow(QMainWindow):
         self.spin_margin = QSpinBox()
         self.spin_margin.setValue(20)
         self.spin_margin.setRange(0, 200)
-        self.spin_margin.setFixedSize(QSize(55, 25))
+        self.spin_margin.setFixedSize(QSize(75, 25))
         self.spin_margin.id = "margin_value"
         self.spin_margin.valueChanged.connect(self.change_value)
 
@@ -1272,7 +1272,6 @@ class MainWindow(QMainWindow):
 
                 if fields_num > 3:
                     arrows = line[3].split(',')
-                    print(arrows)
                     for arrow in arrows:
                         arr = arrow.split(' ')
                         self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
