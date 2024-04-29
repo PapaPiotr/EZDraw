@@ -35,7 +35,7 @@ class ViewDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        temp_jpg = os.path.join(".temp","temp.jpg")
+        temp_jpg = os.path.join("temp","temp.jpg")
         pixmap = QPixmap(temp_jpg)
         self.label = QLabel()
         if self.parent().parent().info["format"] == "portrait":
@@ -599,7 +599,7 @@ class EditDialog(QDialog):
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
         self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
         self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
-        temp_board_path = os.path.join(self.current_dir,".temp","temp_board.jpg")
+        temp_board_path = os.path.join(self.current_dir,"temp","temp_board.jpg")
         self.board_img.save(temp_board_path)
         # raffraichit le pixmap à afficher dans le label
         new_pixmap = QPixmap(temp_board_path)
