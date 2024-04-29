@@ -131,9 +131,9 @@ class EditDialog(QDialog):
 
         # creation de l'image du plateau
         self.board_dir = os.path.join(self.current_dir, 'board')
-        empty_board_path = os.path.join(self.board_dir, 'empty_board.png')
-        self.board_img = Image.open(empty_board_path)
-        self.board_img = self.board_img.resize((600,600))
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
+#       self.board_img = Image.open(empty_board_path)
+#       self.board_img = self.board_img.resize((600,600))
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
         pieces_dir = os.path.join(self.current_dir, 'pieces')
@@ -220,10 +220,13 @@ class EditDialog(QDialog):
         self.submit.clicked.connect(self.parent().change_fen)
 
         # création du label à afficher dans la fenêtre
-        pixmap = QPixmap.fromImage(ImageQt(self.board_img))
+#       pixmap = QPixmap.fromImage(ImageQt(self.board_img))
+
+        pixmap = QPixmap(empty_board_path)
         self.label = QLabel()
         self.label.setFixedSize(600,600)
-        self.label.setPixmap(pixmap.scaled(pixmap.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation))
+        self.label.setPixmap(pixmap)
+        self.label.setScaledContents(True)
         self.label.setMouseTracking(True)
         self.label.mousePressEvent = self.pressEvent
         self.label.mouseReleaseEvent = self.releaseEvent
@@ -589,15 +592,17 @@ class EditDialog(QDialog):
             self.arrows_img.paste(img, (arr[1], arr[2]), img) 
 
         # réinitialise l'image du plateau vide
-        empty_board_path = os.path.join(self.board_dir, 'empty_board.png')
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
         self.board_img = Image.open(empty_board_path)
         self.board_img = self.board_img.resize((600,600))
         # colle l'overlay sur le plateau
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
         self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
         self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
+        temp_board_path = os.path.join(self.current_dir,".temp","temp_board.jpg")
+        self.board_img.save(temp_board_path)
         # raffraichit le pixmap à afficher dans le label
-        new_pixmap = QPixmap.fromImage(ImageQt(self.board_img))
+        new_pixmap = QPixmap(temp_board_path)
         self.label.setPixmap(new_pixmap)
 
         self.fen = repack_fen(self.ext_fen)
