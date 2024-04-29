@@ -764,7 +764,7 @@ class FormDialog(QDialog):
                 with open(fileName, "w") as file:
                     file.write("title_state,")
                     file.write(str(self.parent().info["title_state"]) + "|")
-                    file.write("title_text|")
+                    file.write("title_text,")
                     file.write(self.parent().info["title_text"] + "|")
                     file.write("num_state,")
                     file.write(str(self.parent().info["num_state"]) + "|")
@@ -1265,6 +1265,9 @@ class MainWindow(QMainWindow):
                             self.info[f[0]] = False
                     elif re.search('value', f[0]):
                         self.info[f[0]] = int(f[1])
+                    elif re.search('text', f[0]):
+                        self.info[f[0]] = str(f[1])
+
                 
                 i = 1
                 while i <= lines_value:
