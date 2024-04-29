@@ -99,6 +99,7 @@ class EditDialog(QDialog):
         super().__init__(parent)
 
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.arrows_dir = os.path.join(self.current_dir, "arrows")
         self.setFixedSize(820,690)
         def create_button(k,v):
             button = QPushButton()
@@ -531,7 +532,6 @@ class EditDialog(QDialog):
                     elif start_x > end_x:
                         width = start_x - end_x +1
                         direction = 4
-                self.arrows_dir = os.path.join(self.current_dir, 'arrows')
                 arrow_name = str(direction) + str(width) + str(height) + '.png'
                 arrow_path = os.path.join(self.arrows_dir, arrow_name)
 
@@ -1248,42 +1248,43 @@ class MainWindow(QMainWindow):
         lines_value = 0
         fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","Text Files (*.txt)")
 
-        with open(fileName, 'r') as file:
-            lines = file.read().split('\n')
-            for l in lines:
-                lines_value += 1
-            lines_value -= 1
+        if fileName != '':
+            with open(fileName, 'r') as file:
+                lines = file.read().split('\n')
+                for l in lines:
+                    lines_value += 1
+                lines_value -= 1
 
-            fields = lines[0].split('|')
-            for field in fields:
-                f = field.split(',')
-                if re.search('state', f[0]):
-                   if f[1] == 'True':
-                        self.info[f[0]] = True
-                   else: 
-                        self.info[f[0]] = False
-                elif re.search('value', f[0]):
-                    self.info[f[0]] = int(f[1])
-            
-            i = 1
-            while i <= lines_value:
-                line = lines[i].split('|')
-                self.info['fens'][i-1]=line[0]
-                self.info['legends'][i-1]=line[1]
-                self.info['symbols'][i-1]=line[2]
-                fields_num = 0
-                for l in line:
-                    fields_num += 1
+                fields = lines[0].split('|')
+                for field in fields:
+                    f = field.split(',')
+                    if re.search('state', f[0]):
+                       if f[1] == 'True':
+                            self.info[f[0]] = True
+                       else: 
+                            self.info[f[0]] = False
+                    elif re.search('value', f[0]):
+                        self.info[f[0]] = int(f[1])
+                
+                i = 1
+                while i <= lines_value:
+                    line = lines[i].split('|')
+                    self.info['fens'][i-1]=line[0]
+                    self.info['legends'][i-1]=line[1]
+                    self.info['symbols'][i-1]=line[2]
+                    fields_num = 0
+                    for l in line:
+                        fields_num += 1
 
-                if fields_num > 3:
-                    arrows = line[3].split(',')
-                    for arrow in arrows:
-                        arr = arrow.split(' ')
-                        self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
-                i += 1
+                    if fields_num > 3:
+                        arrows = line[3].split(',')
+                        for arrow in arrows:
+                            arr = arrow.split(' ')
+                            self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
+                    i += 1
 
-            self.actualize()
-            self.click_form()
+                self.actualize()
+                self.click_form()
 
 
     def actualize(self):
