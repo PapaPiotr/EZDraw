@@ -35,18 +35,18 @@ class ViewDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        temp_jpg = os.path.join(".temp","temp.jpg")
+        pixmap = QPixmap(temp_jpg)
         self.label = QLabel()
         if self.parent().parent().info["format"] == "portrait":
-            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((473, 668))))
             self.label.setFixedSize(473, 668)
-            self.label.setPixmap(pixmap)
             self.setFixedSize(493, 733)
         else:
-            pixmap = QPixmap.fromImage(ImageQt(self.parent().parent().info["page"].resize((891, 630))))
             self.label.setFixedSize(891, 630)
-            self.label.setPixmap(pixmap)
             self.setFixedSize(911, 690)
         
+        self.label.setPixmap(pixmap)
+        self.label.setScaledContents(True)
 
         self.save_page_push = QPushButton("Enregistrer la page")
         self.save_page_push.id = "page"
