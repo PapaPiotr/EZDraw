@@ -776,7 +776,7 @@ class FormDialog(QDialog):
                     file.write(str(self.parent().info["index_value"]) + "|")
                     file.write("color_state,")
                     file.write(str(self.parent().info["color_state"]) + "|")
-                    file.write("format|")
+                    file.write("format,")
                     file.write(self.parent().info["format"] + "|")
                     file.write("flip_state,")
                     file.write(str(self.parent().info["flip_state"]) + "|")
@@ -1266,6 +1266,8 @@ class MainWindow(QMainWindow):
                     elif re.search('value', f[0]):
                         self.info[f[0]] = int(f[1])
                     elif re.search('text', f[0]):
+                        self.info[f[0]] = str(f[1])
+                    elif re.search('format', f[0]):
                         self.info[f[0]] = str(f[1])
 
                 
