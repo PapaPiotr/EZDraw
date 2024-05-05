@@ -83,7 +83,7 @@ class ViewDialog(QDialog):
             fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
             if fileName:
                 if re.search('[.]png$', fileName):
-                    fileName += 'rpng'
+                    fileName += 'png'
                 i = 0
                 for box in self.parent().parent().info["boxes"]:
                     if self.parent().parent().info["index_state"]:
@@ -1312,6 +1312,7 @@ class MainWindow(QMainWindow):
         self.check_up.setChecked(self.info["up_state"])
         self.check_left.setChecked(self.info["left_state"])
         self.check_right.setChecked(self.info["right_state"])
+
 
 app = QApplication(sys.argv)
 

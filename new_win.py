@@ -4,15 +4,18 @@ import sys
 import re
 from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QSizePolicy, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QSizePolicy, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("CuteFEN Diagramm Generator")
+        self.currentFileName = "Sans nom 1"
+        self.newFileName = ""
+        self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
         
         self.mainWidget = QWidget()
+        self.activeFile = ""
 
         self.setCentralWidget(self.mainWidget)
 
@@ -141,7 +144,6 @@ class MainWindow(QMainWindow):
 
         self.load_widgets()
 
-
     def implement_dico(self):
         self.info["max_cols"] = 5
         self.info["max_diags"] = 15
@@ -165,7 +167,7 @@ class MainWindow(QMainWindow):
         self.info["left_state"] = True
         self.info["right_state"] = True
 
-        self.laod_default_settings()
+        self.load_default_settings()
         
         # données de page saisies par l'utilisateur
         self.info["title_text"] = ''
@@ -177,6 +179,8 @@ class MainWindow(QMainWindow):
         self.info["legends"] = list()
         self.info["symbols"] = list()
         self.info["arrows"] = list()
+
+        # variables manipulées par le programme
         self.info["trimmed_fens"] = list()
         self.info["trimmed_legends"] = list()
         self.info["trimmed_symbols"] = list()
@@ -186,24 +190,48 @@ class MainWindow(QMainWindow):
         self.info["page"] = None
         self.info["boxes"] = list()
 
+        i = 0
+        while i < self.info["max_diags"]:
+            self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+            self.info["legends"].append("Position de départ")
+            self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+            self.info["arrows"].append([])
+            i += 1
+        i = 0
+
     def load_widgets(self):
         i = 1
         # Section de titre
         if self.info["title_state"] == True:
             self.layTitle.addWidget(QLabel("Titre : "), 0, 0)
-            self.line_title = QLineEdit("")
-            self.layTitle.addWidget(self.line_title, 0, 1)
+            self.title_text = QLineEdit("")
+            self.title_text.textChanged.connect(self.change_title_text)
+            self.layTitle.addWidget(self.title_text, 0, 1)
 
         # Section de formulaire
         self.layForm.addWidget(QLabel("Saisir un FEN ou un identifiant de problème Lichess"), 0, 1)
+
         if self.info["legend_state"] == True:
             self.layForm.addWidget(QLabel("Saisir une légende"), 0, 3)
 
+        self.fens = list()
+        self.legends = list()
+
         while i <= int(self.info["diags_value"]):
+
             self.layForm.addWidget(QLabel("Fig." + str(i)), i, 0)
-            self.layForm.addWidget(QLineEdit("8/8/8/8/8/8/8/8 w"), i, 1)
+
+            self.fens.append(QLineEdit(self.info["fens"][i-1]))
+            self.fens[i-1].id = i-1
+            self.fens[i-1].textChanged.connect(self.change_fens)
+            self.layForm.addWidget(self.fens[i-1], i, 1)
+
             if self.info["legend_state"] == True:
-                self.layForm.addWidget(QLineEdit("Position de départ"), i, 3)
+                self.legends.append(QLineEdit(self.info["legends"][i-1]))
+                self.legends[i-1].id = i-1
+                self.legends[i-1].textChanged.connect(self.change_legends)
+                self.layForm.addWidget(self.legends[i-1], i, 3)
+
             self.layForm.addWidget(QPushButton("Charger un fichier"), i, 2)
             self.layForm.addWidget(QPushButton("Éditeur graphique"), i, 4)
             i += 1
@@ -212,13 +240,42 @@ class MainWindow(QMainWindow):
         if self.info["numPage_state"] == True:
             self.layNum.addWidget(QLabel("Numéro de page"), 0, 0)
             self.numPage_value = QSpinBox()
+            self.numPage_value.setValue(self.info["numPage_value"]) 
+            self.numPage_value.valueChanged.connect(self.change_numPage_value)
             self.layNum.addWidget(self.numPage_value, 0, 1)
         if self.info["numDiag_state"] == True:
             self.layNum.addWidget(QLabel("Numéro du premier diagramme"), 1, 0)
             self.numDiag_value = QSpinBox()
+            self.numDiag_value.setValue(self.info["numDiag_value"]) 
+            self.numDiag_value.valueChanged.connect(self.change_numDiag_value)
             self.layNum.addWidget(self.numDiag_value, 1, 1)
 
-    def laod_default_settings(self):
+    def change_title_text(self, text):
+        self.info["title_text"] = text
+
+    def change_fens(self, text):
+        i = 0
+        while i < self.info["max_diags"]:
+            if self.sender().id == i:
+                self.info["fens"][i] = text
+                break
+            i += 1
+
+    def change_legends(self, text):
+        i = 0
+        while i < self.info["max_diags"]:
+            if self.sender().id == i:
+                self.info["legends"][i] = text
+                break
+            i += 1
+
+    def change_numPage_value(self, value):
+        self.info["numPage_value"] = value
+
+    def change_numDiag_value(self, value):
+        self.info["numDiag_value"] = value
+
+    def load_default_settings(self):
         fileName = os.path.join("settings","default.txt")
 
         with open(fileName, "r") as file:
@@ -247,13 +304,124 @@ class MainWindow(QMainWindow):
 
     def newDoc(self):
         print("Sauvegarder?")
-        print("Chargement du dictionnaire par défaut")
+        self.load_default_settings()
+
+        self.info["fens"].clear()
+        self.info["legends"].clear()
+        self.info["symbols"].clear()
+        self.info["arrows"].clear()
+
+        i = 0
+        while i < self.info["max_diags"]:
+            self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+            self.info["legends"].append("Position de départ")
+            self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+            self.info["arrows"].append([])
+            i += 1
+
+        self.update_display(QDialog.DialogCode.Accepted)
 
     def saveForm(self):
-        print("Sauvegarder le formulaire")
+        if self.currentFileName != self.newFileName:
+            self.saveAs()
+        else:
+            with open(self.newFileName, "w") as file:
+                file.write("title_state,")
+                file.write(str(self.info["title_state"]) + "|")
+                file.write("numDiag_state,")
+                file.write(str(self.info["numDiag_state"]) + "|")
+                file.write("numDiag_text,")
+                file.write(str(self.info["numDiag_text"]) + "|")
+                file.write("color_state,")
+                file.write(str(self.info["color_state"]) + "|")
+                file.write("color_text,")
+                file.write(str(self.info["color_text"]) + "|")
+                file.write("format_text,")
+                file.write(self.info["format_text"] + "|")
+                file.write("flip_state,")
+                file.write(str(self.info["flip_state"]) + "|")
+                file.write("legend_state,")
+                file.write(str(self.info["legend_state"]) + "|")
+                file.write("cols_value,")
+                file.write(str(self.info["cols_value"]) + "|")
+                file.write("diags_value,")
+                file.write(str(self.info["diags_value"]) + "|")
+                file.write("margin_value,")
+                file.write(str(self.info["margin_value"]) + "|")
+                file.write("coord_state,")
+                file.write(str(self.info["coord_state"]) + "|")
+                file.write("down_state,")
+                file.write(str(self.info["down_state"]) + "|")
+                file.write("up_state,")
+                file.write(str(self.info["up_state"]) + "|")
+                file.write("left_state,")
+                file.write(str(self.info["left_state"]) + "|")
+                file.write("right_state,")
+                file.write(str(self.info["right_state"]) + "|")
+
+                file.write("title_text,")
+                file.write(self.info["title_text"] + "|")
+                file.write("numPage_value,")
+                file.write(str(self.info["numPage_value"]) + "|")
+                file.write("numDiag_value")
+                file.write(str(self.info["numDiag_value"]) + "|")
+
+                for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
+                    print(fen,leg,sym)
+                    file.write( '\n' + fen + '|' + leg + '|' + sym)
 
     def saveAs(self):
         print("Enregistrer sous")
+
+        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","save","")
+        self.currentFileName = self.newFileName
+#       if not re.search('[.]txt$', self.currentFileName):
+#           self.currentFileName += ".txt"
+        self.setWindowTitle(os.path.basename(self.newFileName) + " | CuteFEN Diagramm Generator")
+        with open(self.newFileName, "w") as file:
+            file.write("title_state,")
+            file.write(str(self.info["title_state"]) + "|")
+            file.write("numDiag_state,")
+            file.write(str(self.info["numDiag_state"]) + "|")
+            file.write("numDiag_text,")
+            file.write(str(self.info["numDiag_text"]) + "|")
+            file.write("color_state,")
+            file.write(str(self.info["color_state"]) + "|")
+            file.write("color_text,")
+            file.write(str(self.info["color_text"]) + "|")
+            file.write("format_text,")
+            file.write(self.info["format_text"] + "|")
+            file.write("flip_state,")
+            file.write(str(self.info["flip_state"]) + "|")
+            file.write("legend_state,")
+            file.write(str(self.info["legend_state"]) + "|")
+            file.write("cols_value,")
+            file.write(str(self.info["cols_value"]) + "|")
+            file.write("diags_value,")
+            file.write(str(self.info["diags_value"]) + "|")
+            file.write("margin_value,")
+            file.write(str(self.info["margin_value"]) + "|")
+            file.write("coord_state,")
+            file.write(str(self.info["coord_state"]) + "|")
+            file.write("down_state,")
+            file.write(str(self.info["down_state"]) + "|")
+            file.write("up_state,")
+            file.write(str(self.info["up_state"]) + "|")
+            file.write("left_state,")
+            file.write(str(self.info["left_state"]) + "|")
+            file.write("right_state,")
+            file.write(str(self.info["right_state"]) + "|")
+
+            file.write("title_text,")
+            file.write(self.info["title_text"] + "|")
+            file.write("numPage_value,")
+            file.write(str(self.info["numPage_value"]) + "|")
+            file.write("numDiag_value")
+            file.write(str(self.info["numDiag_value"]) + "|")
+
+            for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
+                print(fen,leg,sym)
+                file.write( '\n' + fen + '|' + leg + '|' + sym)
 
     def openDoc(self):
         print("Ouvrir un formulaire")
@@ -438,24 +606,6 @@ class PropDialog(QDialog):
         for main_info in self.parent().info.items():
             self.info[main_info[0]] = main_info[1]
 
-#       self.info["title_state"] = True 
-#       self.info["numPage_state"] = True
-#       self.info["numDiag_state"] = True
-#       self.info["numDiag_text"] = "à gauche"
-#       self.info["color_state"] = True
-#       self.info["color_text"] = "à gauche"
-#       self.info["format_text"] = "portrait"
-#       self.info["flip_state"] = True
-#       self.info["legend_state"] = True
-#       self.info["cols_value"] = 3
-#       self.info["diags_value"] = 15
-#       self.info["margin_value"] = 20
-#       self.info["coord_state"] = True
-#       self.info["down_state"] = True
-#       self.info["up_state"] = True
-#       self.info["left_state"] = True
-#       self.info["right_state"] = True
-
     def load_default_settings(self):
         pass
 
@@ -464,110 +614,93 @@ class PropDialog(QDialog):
             self.info["title_state"] = True
         else:
             self.info["title_state"] = False
-        print(self.info["title_state"])
 
     def set_numPage_state(self, state):
         if state:
             self.info["numPage_state"] = True
         else:
             self.info["numPage_state"] = False
-        print(self.info["numPage_state"])
 
     def set_format_text(self, text):
         if text == "portrait":
             self.info["format_text"] = "portrait"
         else:
             self.info["format_text"] = "paysage"
-        print(self.info["format_text"])
 
     def set_diags_value(self, value):
         self.info["diags_value"] = value
-        print(self.info["diags_value"])
 
     def set_cols_value(self, value):
         self.info["cols_value"] = value
-        print(self.info["cols_value"])
 
     def set_margin_value(self, value):
         self.info["margin_value"] = value
-        print(self.info["margin_value"])
 
     def set_flip_state(self, state):
         if state:
             self.info["flip_state"] = True
         else:
             self.info["flip_state"] = False
-        print(self.info["flip_state"])
 
     def set_color_state(self, state):
         if state:
             self.info["color_state"] = True
         else:
             self.info["color_state"] = False
-        print(self.info["color_state"])
 
     def set_color_text(self, text):
         if text == "à gauche":
             self.info["color_text"] = "à gauche"
         else:
             self.info["color_text"] = "à droite"
-        print(self.info["color_text"])
 
     def set_numDiag_state(self, state):
         if state:
             self.info["numDiag_state"] = True
         else:
             self.info["numDiag_state"] = False
-        print(self.info["numDiag_state"])
 
     def set_numDiag_text(self, text):
         if text == "à gauche":
             self.info["numDiag_text"] = "à gauche"
         else:
             self.info["numDiag_text"] = "à droite"
-        print(self.info["numDiag_text"])
 
     def set_legend_state(self, state):
         if state:
             self.info["legend_state"] = True
         else:
             self.info["legend_state"] = False
-        print(self.info["legend_state"])
 
     def set_coord_state(self, state):
         if state:
             self.info["coord_state"] = True
         else:
             self.info["coord_state"] = False
-        print(self.info["coord_state"])
         
     def set_up_state(self, state):
         if state:
             self.info["up_state"] = True
         else:
             self.info["up_state"] = False
-        print(self.info["up_state"])
 
     def set_down_state(self, state):
         if state:
             self.info["down_state"] = True
         else:
             self.info["down_state"] = False
-        print(self.info["down_state"])
 
     def set_left_state(self, state):
         if state:
             self.info["left_state"] = True
         else:
             self.info["left_state"] = False
-        print(self.info["left_state"])
 
     def set_right_state(self, state):
         if state:
             self.info["right_state"] = True
         else:
             self.info["right_state"] = False
-        print(self.info["right_state"])
 
     def save_settings(self):
         print("Sauvegarde par défaut")
@@ -607,7 +740,6 @@ class PropDialog(QDialog):
             file.write(str(self.info["left_state"]) + "|")
             file.write("right_state,")
             file.write(str(self.info["right_state"]))
-
 
     def cancel(self):
         self.finished.emit(QDialog.DialogCode.Rejected)

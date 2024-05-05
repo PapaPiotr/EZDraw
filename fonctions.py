@@ -728,7 +728,7 @@ def draw_page(orient, t_state, title, n_state, num, col, margin, boxes):
     margin_top = 0
     margin_bot = 0
     num = str(num)
-    fontsize = 200
+    fontsize = 120
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     fonts_dir = os.path.join(current_dir, 'fonts')
