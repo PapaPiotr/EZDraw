@@ -10,7 +10,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.currentFileName = "Sans nom 1"
+        self.currentFileName = "Nouveau document"
         self.newFileName = ""
         self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
         
@@ -302,27 +302,54 @@ class MainWindow(QMainWindow):
 
             self.load_widgets()
 
-    def newDoc(self):
-        print("Sauvegarder?")
+    def saveBefore(self, result):
+        if result == QDialog.DialogCode.Accepted:
+            self.saveAs()
+            self.newFileName = "Nouveau document"
+            self.setWindowTitle(self.newFileName + " | CuteFEN Diagramm Generator")
+
+            self.info["fens"].clear()
+            self.info["legends"].clear()
+            self.info["symbols"].clear()
+            self.info["arrows"].clear()
+
+            i = 0
+            while i < self.info["max_diags"]:
+                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+                self.info["legends"].append("Position de départ")
+                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+                self.info["arrows"].append([])
+                i += 1
+
         self.load_default_settings()
-
-        self.info["fens"].clear()
-        self.info["legends"].clear()
-        self.info["symbols"].clear()
-        self.info["arrows"].clear()
-
-        i = 0
-        while i < self.info["max_diags"]:
-            self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
-            self.info["legends"].append("Position de départ")
-            self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
-            self.info["arrows"].append([])
-            i += 1
-
         self.update_display(QDialog.DialogCode.Accepted)
 
+    def newDoc(self):
+        dialog = SaveBeforeDialog(self)
+        dialog.finished.connect(self.saveBefore)
+        dialog.exec()
+
+#       self.newFileName = "Nouveau document"
+#       self.setWindowTitle(self.newFileName + " | CuteFEN Diagramm Generator")
+
+#       self.info["fens"].clear()
+#       self.info["legends"].clear()
+#       self.info["symbols"].clear()
+#       self.info["arrows"].clear()
+
+#       i = 0
+#       while i < self.info["max_diags"]:
+#           self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+#           self.info["legends"].append("Position de départ")
+#           self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+#           self.info["arrows"].append([])
+#           i += 1
+
+#       self.load_default_settings()
+#       self.update_display(QDialog.DialogCode.Accepted)
+
     def saveForm(self):
-        if self.currentFileName != self.newFileName:
+        if self.currentFileName != self.newFileName or self.currentFileName == "Nouveau document":
             self.saveAs()
         else:
             with open(self.newFileName, "w") as file:
@@ -367,16 +394,11 @@ class MainWindow(QMainWindow):
                 file.write(str(self.info["numDiag_value"]) + "|")
 
                 for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
-                    print(fen,leg,sym)
                     file.write( '\n' + fen + '|' + leg + '|' + sym)
 
     def saveAs(self):
-        print("Enregistrer sous")
-
         self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","save","")
         self.currentFileName = self.newFileName
-#       if not re.search('[.]txt$', self.currentFileName):
-#           self.currentFileName += ".txt"
         self.setWindowTitle(os.path.basename(self.newFileName) + " | CuteFEN Diagramm Generator")
         with open(self.newFileName, "w") as file:
             file.write("title_state,")
@@ -420,7 +442,6 @@ class MainWindow(QMainWindow):
             file.write(str(self.info["numDiag_value"]) + "|")
 
             for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
-                print(fen,leg,sym)
                 file.write( '\n' + fen + '|' + leg + '|' + sym)
 
     def openDoc(self):
@@ -703,7 +724,6 @@ class PropDialog(QDialog):
             self.info["right_state"] = False
 
     def save_settings(self):
-        print("Sauvegarde par défaut")
         fileName = os.path.join("settings", "default.txt")
         with open(fileName, "w") as file:
             file.write("title_state,")
@@ -740,6 +760,7 @@ class PropDialog(QDialog):
             file.write(str(self.info["left_state"]) + "|")
             file.write("right_state,")
             file.write(str(self.info["right_state"]))
+        self.close()
 
     def cancel(self):
         self.finished.emit(QDialog.DialogCode.Rejected)
@@ -749,6 +770,44 @@ class PropDialog(QDialog):
         for diag_info in self.info.items():
             self.parent().info[diag_info[0]] = diag_info[1]
         self.finished.emit(QDialog.DialogCode.Accepted)
+        self.close()
+
+class SaveBeforeDialog(QDialog):
+    finished = pyqtSignal(int)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Enregistrer le document?")
+        self.main_layout = QVBoxLayout()
+        self.buttons_layout = QHBoxLayout()
+
+        self.label = QLabel("Attention, les modficiations non enregistrées seront perdues")
+        self.main_layout.addWidget(self.label)
+
+        self.save = QPushButton("Enregistrer")
+        self.save.clicked.connect(self.save_clicked)
+        self.doNotSave = QPushButton("Ne pas enregistrer")
+        self.doNotSave.clicked.connect(self.doNotSave_clicked)
+        self.cancel = QPushButton("Annuler")
+        self.cancel.clicked.connect(self.cancel_clicked)
+
+        self.buttons_layout.addWidget(self.save)
+        self.buttons_layout.addWidget(self.cancel)
+        self.buttons_layout.addWidget(self.doNotSave)
+
+        self.main_layout.addLayout(self.buttons_layout)
+
+        self.setLayout(self.main_layout)
+        
+    def save_clicked(self):
+        self.finished.emit(QDialog.DialogCode.Accepted)
+        self.close()
+
+    def doNotSave_clicked(self):
+        self.finished.emit(QDialog.DialogCode.Rejected)
+        self.close()
+
+    def cancel_clicked(self):
         self.close()
 
 if __name__ == "__main__":
