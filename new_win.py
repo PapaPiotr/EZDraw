@@ -1,9 +1,12 @@
 import os
 import sys
 import re
-from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap
-from PyQt6.QtCore import Qt 
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QSizePolicy, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
+from PIL import ImageFont, Image
+from PIL.ImageQt import ImageQt
+from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap, QMouseEvent, QCursor
+from PyQt6.QtCore import QSize, Qt, QPoint
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
+from fonctions import submit, test, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -188,6 +191,9 @@ class MainWindow(QMainWindow):
         self.info["page"] = None
         self.info["boxes"] = list()
 
+        # identifiant du diagramme à ouvrir dans l'éditeur graphique:
+        self.info["active_editor"] = 0
+
         i = 0
         while i < self.info["max_diags"]:
             self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
@@ -235,6 +241,7 @@ class MainWindow(QMainWindow):
 
         self.fens = list()
         self.legends = list()
+        self.edits = list()
 
         while i <= int(self.info["diags_value"]):
 
@@ -252,7 +259,10 @@ class MainWindow(QMainWindow):
                 self.layForm.addWidget(self.legends[i-1], i, 3)
 
             self.layForm.addWidget(QPushButton("Charger un fichier"), i, 2)
-            self.layForm.addWidget(QPushButton("Éditeur graphique"), i, 4)
+            self.edits.append(QPushButton("Éditeur graphique"))
+            self.edits[i-1].id = i-1
+            self.edits[i-1].clicked.connect(self.openEdit)
+            self.layForm.addWidget(self.edits[i-1], i, 4)
             i += 1
 
         # Section de numérotation
@@ -541,6 +551,541 @@ class MainWindow(QMainWindow):
         self.info["numDiag_value"] = value
         self.changedFile = True
         self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+
+    def openEdit(self):
+        # le numéro du fen à éditer est gardé en mémoire dans le dico principal
+        # ouverture de l'éditeur
+        self.info["active_editor"] = self.sender().id
+        dialog = EditDialog(self)
+        dialog.exec()
+
+        result = dialog.result()
+        if result == 1:
+            for fen, text in zip(self.fens, self.info["fens"]):
+                fen.setText(text)
+
+class EditDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.arrows_dir = os.path.join(self.current_dir, "arrows")
+        self.setFixedSize(820,690)
+        def create_button(k,v):
+            button = QPushButton()
+            button.setFixedSize(75,75)
+            button.setIconSize(QSize(60,60))
+            button.id = k
+            button.path = v
+            button.setIcon(QIcon(v))
+            button.setCheckable(True)
+            button.clicked.connect(self.pieces_click)
+            button.image = Image.open(v)
+            button.image = button.image.resize((75,75))
+            return(button)
+
+        # identification du fen a éditer
+        self.diag_id = self.parent().info["active_editor"]
+
+        # listes pours stocker les chaines de caractères qui encodent la position
+        # (fen : pour l'export)
+        # (ext_fen : usage interne à l'application)
+        # (symbol_fen : pour les symboles)
+        self.fen = self.parent().info["fens"][self.diag_id]
+        self.color = self.fen.split()[1]
+        self.ext_fen = unpack_fen(self.fen, self.parent().info["flip_state"])
+        self.symbol_fen = self.parent().info["symbols"][self.diag_id]
+        self.printed_arrows = self.parent().info["arrows"][self.diag_id]
+        if self.parent().info["flip_state"] and self.color == 'b':
+            self.symbol_fen = flip_sym(self.symbol_fen)
+            self.printed_arrows = flip_arrows(self.printed_arrows)
+
+        # creation de l'image du plateau
+        self.board_dir = os.path.join(self.current_dir, 'board')
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
+#       self.board_img = Image.open(empty_board_path)
+#       self.board_img = self.board_img.resize((600,600))
+
+        # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
+        pieces_dir = os.path.join(self.current_dir, 'pieces')
+        self.buttons = list()
+        self.infos = {}
+        bK_path = os.path.join(pieces_dir, 'bK.png')
+        self.infos["k"]= bK_path
+        bQ_path = os.path.join(pieces_dir, 'bQ.png')
+        self.infos["q"]= bQ_path
+        bB_path = os.path.join(pieces_dir, 'bB.png')
+        self.infos["b"]= bB_path
+        bN_path = os.path.join(pieces_dir, 'bN.png')
+        self.infos["n"]= bN_path
+        bR_path = os.path.join(pieces_dir, 'bR.png')
+        self.infos["r"]= bR_path
+        bP_path = os.path.join(pieces_dir, 'bP.png')
+        self.infos["p"]= bP_path
+        wK_path = os.path.join(pieces_dir, 'wK.png')
+        self.infos["K"]= wK_path
+        wQ_path = os.path.join(pieces_dir, 'wQ.png')
+        self.infos["Q"]= wQ_path
+        wB_path = os.path.join(pieces_dir, 'wB.png')
+        self.infos["B"]= wB_path
+        wN_path = os.path.join(pieces_dir, 'wN.png')
+        self.infos["N"]= wN_path
+        wR_path = os.path.join(pieces_dir, 'wR.png')
+        self.infos["R"]= wR_path
+        wP_path = os.path.join(pieces_dir, 'wP.png')
+        self.infos["P"]= wP_path
+
+        symbols_dir = os.path.join(self.current_dir, 'symbols')
+        bt_path = os.path.join(symbols_dir, 'bt.png')
+        self.infos["t"]= bt_path
+        by_path = os.path.join(symbols_dir, 'by.png')
+        self.infos["y"]= by_path
+        bg_path = os.path.join(symbols_dir, 'bg.png')
+        self.infos["g"]= bg_path
+        bo_path = os.path.join(symbols_dir, 'bo.png')
+        self.infos["o"]= bo_path
+
+        wt_path = os.path.join(symbols_dir, 'wt.png')
+        self.infos["T"]= wt_path
+        wy_path = os.path.join(symbols_dir, 'wy.png')
+        self.infos["Y"]= wy_path
+        wg_path = os.path.join(symbols_dir, 'wg.png')
+        self.infos["G"]= wg_path
+        wo_path = os.path.join(symbols_dir, 'wo.png')
+        self.infos["O"]= wo_path
+
+        # création des widget
+        combo = QComboBox()
+        combo.setMaximumWidth(200)
+        combo.addItems(["Pièces", "Formes", "Flèches"])
+        combo.currentTextChanged.connect(self.text_changed)
+
+        # choix du trait (renversement du plateau)
+        self.radio_white = QRadioButton("Trait aux blancs")
+        self.radio_white.id = 'w'
+        self.radio_white.clicked.connect(self.set_color)
+        if self.color == 'w':
+            self.radio_white.setChecked(True)
+        self.radio_black = QRadioButton("Trait aux noirs")
+        self.radio_black.id = 'b'
+        self.radio_black.clicked.connect(self.set_color)
+        if self.color == 'b':
+            self.radio_black.setChecked(True)
+        self.prev_color = self.color
+        
+        self.start_pos = QPushButton("Position de départ")
+        self.start_pos.clicked.connect(self.pos_click)
+        self.start_pos.id = 0
+        self.empty_sym = QPushButton("Effacer les annotations")
+        self.empty_sym.clicked.connect(self.pos_click)
+        self.empty_sym.id = 2
+        self.empty_pos = QPushButton("Vider l'échiquier")
+        self.empty_pos.clicked.connect(self.pos_click)
+        self.empty_pos.id = 1
+        self.save_pos = QPushButton("Sauvegarder la position")
+        self.save_pos.clicked.connect(self.pos_click)
+        self.save_pos.id = 3
+        self.submit = QPushButton("Valider")
+        self.submit.id = "edit"
+        self.submit.clicked.connect(self.submit_click)
+
+        # création du label à afficher dans la fenêtre
+#       pixmap = QPixmap.fromImage(ImageQt(self.board_img))
+
+        pixmap = QPixmap(empty_board_path)
+        self.label = QLabel()
+        self.label.setFixedSize(600,600)
+        self.label.setPixmap(pixmap)
+        self.label.setScaledContents(True)
+        self.label.setMouseTracking(True)
+        self.label.mousePressEvent = self.pressEvent
+        self.label.mouseReleaseEvent = self.releaseEvent
+        
+        # création des boutons
+        for k,v in self.infos.items():
+            self.buttons.append(create_button(k,v))
+
+        # pour récupérer la valeur de la pièce à coller dans l'éditeur
+        self.active_piece = '0'
+        # pour récupérer la valeur de la pièce à déplacer dans l'éditeur
+        self.dragged_piece = '0'
+
+        # image de la pièce à déplacer
+        self.dragged_image = None
+        # position du curseur
+        self.position = None
+
+        # position de départ et d'arrivée d'une flèche
+        self.arrow_start = None
+        self.arrow_end = None
+        self.arr_img = None
+
+        #layouts de pièces
+        blacks_layout = QVBoxLayout()
+        whites_layout = QVBoxLayout()
+        b_sym_layout = QVBoxLayout()
+        b_sym2_layout = QVBoxLayout()
+        for button in self.buttons:
+            if button.id in ['k','q','b','n','r','p']:
+                blacks_layout.addWidget(button)
+            elif button.id in ['K','Q','B','N','R','P']:
+                whites_layout.addWidget(button)
+            elif button.id in ['g','t','o','y']:
+                b_sym_layout.addWidget(button)
+            elif button.id in ['G','T','O','Y']:
+                b_sym2_layout.addWidget(button)
+
+        label_layout = QVBoxLayout()
+        label_layout.addWidget(self.label)
+        bot_layout = QHBoxLayout()
+        bot_layout2 = QHBoxLayout()
+        label_layout.addLayout(bot_layout2)
+        label_layout.addLayout(bot_layout)
+        
+        # création des onglets
+        pieces_tab = QWidget()
+        pieces_layout = QHBoxLayout()
+        pieces_layout.addLayout(blacks_layout)
+        pieces_layout.addLayout(whites_layout)
+        pieces_tab.setLayout(pieces_layout)
+
+        symbols_tab =QWidget()
+        symbols_layout = QHBoxLayout()
+        symbols_layout.addLayout(b_sym_layout)
+        symbols_layout.addLayout(b_sym2_layout)
+        symbols_tab.setLayout(symbols_layout)
+
+        arrows_tab = QWidget()
+        arrows_layout = QVBoxLayout()
+        arrows_tab.setLayout(arrows_layout)
+
+        # création du stacked layout
+        self.stack_layout = QStackedLayout()
+        self.stack_layout.addWidget(pieces_tab)
+        self.stack_layout.addWidget(symbols_tab)
+        self.stack_layout.addWidget(arrows_tab)
+
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(combo)
+        left_layout.addLayout(self.stack_layout)
+        left_layout.addWidget(self.radio_white)
+        left_layout.addWidget(self.radio_black)
+        bot_layout2.addWidget(self.start_pos)
+        bot_layout2.addWidget(self.empty_sym)
+        bot_layout2.addWidget(self.empty_pos)
+        bot_layout.addWidget(self.save_pos)
+        bot_layout.addWidget(self.submit)
+
+        # layout général
+        upper_layout = QVBoxLayout()
+        layout = QHBoxLayout()
+
+        layout.addLayout(left_layout)
+        layout.addLayout(label_layout)
+        upper_layout.addLayout(layout)
+        self.setLayout(upper_layout)
+
+        self.refresh()
+
+    def set_color(self):
+        # retourne le ext_fen pour que le joueur ayant le trait soit en bas
+        # il sera remis à l'endroit avant d'être envoyé au formulaire
+        self.color = self.sender().id
+        if self.color != self.prev_color:
+            self.ext_fen = flip_fen(self.ext_fen)
+            self.symbol_fen = flip_sym(self.symbol_fen)
+            self.printed_arrows = flip_arrows(self.printed_arrows)
+            self.refresh()
+            self.prev_color = self.color
+
+    def text_changed(self, s):
+        if s == "Formes":
+            self.stack_layout.setCurrentIndex(1)
+            self.active_piece = '0'
+        elif s == "Pièces":
+            self.stack_layout.setCurrentIndex(0)
+            self.active_piece = '0'
+        elif s == "Flèches":
+            self.stack_layout.setCurrentIndex(2)
+            self.active_piece = '0'
+
+    def pos_click(self):
+        if self.sender().id == 0:
+            self.ext_fen = 'rnbqkbnrpppppppp00000000000000000000000000000000PPPPPPPPRNBQKBNR'
+            self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
+            if self.color == 'b':
+                self.ext_fen = flip_fen(self.ext_fen)
+        elif self.sender().id == 2:
+            self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
+            self.printed_arrows = []
+        elif self.sender().id == 1:
+            self.ext_fen = '0000000000000000000000000000000000000000000000000000000000000000'
+            self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
+        elif self.sender().id == 3:
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
+            if fileName:
+                if not re.search('[.]png$', fileName):
+                    fileName += '.png'
+                self.board_img.save(fileName)
+
+        self.refresh()
+
+    def pieces_click(self):
+        if self.active_piece == self.sender().id:
+            self.active_piece = '0'
+        else:
+            self.active_piece = self.sender().id
+        for button in self.buttons:
+            if button.id != self.sender().id:
+                button.setChecked(False)
+
+    def pressEvent(self, event: QMouseEvent):
+        self.position = event.pos()
+        i = 1
+        j = 1
+        x = 0
+        y = 0
+        blit_x = 0
+        blit_y = 0
+        # renvoie blit_x et blit_y (orignie de la case cliquée)
+        while x < 600:
+            if self.position.x() > x and self.position.x() <= x+75:
+                blit_x = x
+            i += 1
+            x += 75
+        
+        while y < 600:
+            if self.position.y() > y and self.position.y() <= y+75:
+                blit_y = y
+            j += 1
+            y += 75
+
+        # blit_pos récupère le rang de la case cliquée (de 0 à 63)
+        blit_pos = int((((blit_x/75)+1) + (blit_y/75) * 8)-1)
+
+        # modification des codes *_state
+        # par drag n' drop au clic central
+        if event.button() == Qt.MouseButton.MiddleButton:
+
+            self.dragged_piece = self.ext_fen[blit_pos]
+            for button in self.buttons:
+                if self.dragged_piece == button.id:
+                    self.dragged_image = QPixmap.fromImage(ImageQt(button.image))
+                    cursor = QCursor(self.dragged_image)
+                    self.setCursor(cursor)
+            self.ext_fen = self.ext_fen[:blit_pos] + '0' + self.ext_fen[blit_pos+1:]
+
+        else:
+            if self.stack_layout.currentIndex() == 0:
+                # par collage de la pièce active au clic gauche
+                if event.button() == Qt.MouseButton.LeftButton:
+                    if self.ext_fen[blit_pos] == self.active_piece:
+                        self.ext_fen = self.ext_fen[:blit_pos] + '0' + self.ext_fen[blit_pos+1:]
+                    else:
+                        self.ext_fen = self.ext_fen[:blit_pos] + self.active_piece + self.ext_fen[blit_pos+1:]
+                # par collage de la pièce de couleur opposée au clic droit
+                elif event.button() == Qt.MouseButton.RightButton:
+                    if self.active_piece.isupper():
+                        mirror_piece = self.active_piece.lower()
+                    else:
+                        mirror_piece = self.active_piece.upper()
+                    if self.ext_fen[blit_pos] == mirror_piece:
+                        self.ext_fen = self.ext_fen[:blit_pos] + self.active_piece + self.ext_fen[blit_pos+1:]
+                    else:
+                        self.ext_fen = self.ext_fen[:blit_pos] + mirror_piece + self.ext_fen[blit_pos+1:]
+            elif self.stack_layout.currentIndex() == 1:
+                # collage de la forme active au clic gauche
+                if event.button() == Qt.MouseButton.LeftButton:
+                    if self.symbol_fen[blit_pos] == self.active_piece:
+                        self.symbol_fen = self.symbol_fen[:blit_pos] + '0' + self.symbol_fen[blit_pos+1:]
+                    else:
+                        self.symbol_fen = self.symbol_fen[:blit_pos] + self.active_piece + self.symbol_fen[blit_pos+1:]
+                # collage de la forme de couleur opposée au clic droit
+                elif event.button() == Qt.MouseButton.RightButton:
+                    if self.active_piece.isupper():
+                        mirror_piece = self.active_piece.lower()
+                    else:
+                        mirror_piece = self.active_piece.upper()
+                    if self.symbol_fen[blit_pos] == mirror_piece:
+                        self.symbol_fen = self.symbol_fen[:blit_pos] + self.active_piece + self.symbol_fen[blit_pos+1:]
+                    else:
+                        self.symbol_fen = self.symbol_fen[:blit_pos] + mirror_piece + self.symbol_fen[blit_pos+1:]
+            elif self.stack_layout.currentIndex() == 2:
+                self.arrow_start = blit_pos
+
+        self.refresh()
+        
+    def releaseEvent(self, event):
+        # récupération de la case 
+        self.position = event.pos()
+        i = 1
+        j = 1
+        x = 0
+        y = 0
+        blit_x = 0
+        blit_y = 0
+
+        # renvoie blit_x et blit_y (orignie de la case cliquée)
+        while x < 600:
+            if self.position.x() > x and self.position.x() <= x+75:
+                blit_x = x
+            i += 1
+            x += 75
+        
+        while y < 600:
+            if self.position.y() > y and self.position.y() <= y+75:
+                blit_y = y
+            j += 1
+            y += 75
+
+        # blit_pos récupère le rang de la case cliquée (de 0 à 63)
+        blit_pos = int((((blit_x/75)+1) + (blit_y/75) * 8)-1)
+       
+        # déplace une pièce
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.ext_fen = self.ext_fen[:blit_pos] + self.dragged_piece + self.ext_fen[blit_pos+1:]
+            
+            self.refresh()
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+        elif self.stack_layout.currentIndex() == 2:
+            # déssine une flèche
+            if blit_pos != self.arrow_start:
+                self.arrow_end = blit_pos
+
+                # identification du point de collage de la flèche
+                start_x = self.arrow_start%8+1
+                start_y = int(self.arrow_start/8+1)
+                end_x = self.arrow_end%8+1
+                end_y = int(self.arrow_end/8+1)
+
+                if start_x > end_x:
+                    img_x = (end_x-1)*75
+                else:
+                    img_x = (start_x-1)*75
+
+                if start_y > end_y:
+                    img_y = (end_y-1)*75
+                else:
+                    img_y = (start_y-1)*75
+
+                # identification du sens de la flèche et de la taille de l'image
+                if start_y < end_y:
+                    height = end_y - start_y + 1
+                    if start_x < end_x:
+                        width = end_x - start_x +1
+                        direction = 3
+                    elif start_x > end_x:
+                        width = start_x - end_x +1
+                        direction = 1
+                    else:
+                        width = 1
+                        direction = 2
+                elif start_y > end_y:
+                    height = start_y - end_y + 1
+                    if start_x < end_x:
+                        width = end_x - start_x +1
+                        direction = 9
+                    elif start_x > end_x:
+                        width = start_x - end_x +1
+                        direction = 7
+                    else:
+                        width = 1
+                        direction = 8
+                else:
+                    height = 1
+                    if start_x < end_x:
+                        width = end_x - start_x +1
+                        direction = 6
+                    elif start_x > end_x:
+                        width = start_x - end_x +1
+                        direction = 4
+                arrow_name = str(direction) + str(width) + str(height) + '.png'
+                arrow_path = os.path.join(self.arrows_dir, arrow_name)
+
+
+                try:
+                    # vérifie que la flèche correspondante existe
+                    self.arr_img = Image.open(arrow_path)
+                    # teste si la même flèche est déjà trâcée
+                    new_arrow = [arrow_name, img_x, img_y]
+                    same_arrow = False
+                    for arrow in self.printed_arrows:
+                        # si oui elle est effacée
+                        if new_arrow == arrow:
+                            self.printed_arrows.remove(arrow)
+                            same_arrow = True
+                            new_arrow = None
+
+                    # si non elle est ajoutée
+                    if not same_arrow:
+                        self.printed_arrows.append(new_arrow)
+
+                    self.refresh()
+                except:
+                    print('pas de fleche pour ce tracé')
+
+    def refresh(self):
+        # crée l'overlay sur lequel vont être imprimées les pièces
+        empty1_path = os.path.join(self.board_dir, 'empty1.png')
+        self.pieces_img = Image.open(empty1_path)
+        self.pieces_img = self.pieces_img.resize((600,600))
+        self.symbols_img = Image.open(empty1_path)
+        self.symbols_img = self.symbols_img.resize((600,600))
+        self.arrows_img = Image.open(empty1_path)
+        self.arrows_img = self.arrows_img.resize((600,600))
+
+        # colle les pièces sur l'overlay
+        i = 0
+        for char in self.ext_fen:
+            for button in self.buttons:
+                if char == button.id:
+                    self.pieces_img.paste(button.image, ((i%8)*75,int(i/8)*75), button.image)
+            i += 1
+
+        i = 0
+        for sym in self.symbol_fen:
+            for button in self.buttons:
+                if sym == button.id:
+                    self.symbols_img.paste(button.image, ((i%8)*75,int(i/8)*75), button.image)
+            i +=1
+
+        i = 0
+        for arr in self.printed_arrows:
+            rs_x= int(arr[0][1])*75
+            rs_y= int(arr[0][2])*75
+            img_path = os.path.join(self.arrows_dir, arr[0])
+            img = Image.open(img_path)
+            img = img.resize((rs_x,rs_y))
+            self.arrows_img.paste(img, (arr[1], arr[2]), img) 
+
+        # réinitialise l'image du plateau vide
+        empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
+        self.board_img = Image.open(empty_board_path)
+        self.board_img = self.board_img.resize((600,600))
+        # colle l'overlay sur le plateau
+        self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
+        self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
+        self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
+        temp_board_path = os.path.join(self.current_dir,"temp","temp_board.jpg")
+        self.board_img.save(temp_board_path)
+        # raffraichit le pixmap à afficher dans le label
+        new_pixmap = QPixmap(temp_board_path)
+        self.label.setPixmap(new_pixmap)
+
+        self.fen = repack_fen(self.ext_fen)
+
+    def submit_click(self):
+        # rétablit le fen dans le bon sens s'il a été retourné dans l'éditeur
+        if self.color == 'b':
+            self.fen = flip_fen(self.fen)
+            self.symbol_fen = flip_sym(self.symbol_fen)
+            self.printed_arrows = flip_arrows(self.printed_arrows)
+        self.fen += (' ' + self.color)
+        self.parent().info["fens"][self.parent().info["active_editor"]]=self.fen
+        self.parent().info["symbols"][self.parent().info["active_editor"]]=self.symbol_fen
+        self.parent().info["arrows"][self.parent().info["active_editor"]]=self.printed_arrows
+        self.done(1)
 
 class PropDialog(QDialog):
     def __init__(self, parent=None):
