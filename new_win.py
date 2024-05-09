@@ -4,9 +4,9 @@ import re
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap, QMouseEvent, QCursor
-from PyQt6.QtCore import QSize, Qt, QPoint
+from PyQt6.QtCore import QLine, QSize, Qt, QPoint
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
-from fonctions import submit, test, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
+from new_fonctions import submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -153,9 +153,9 @@ class MainWindow(QMainWindow):
         self.info["title_state"] = True 
         self.info["numPage_state"] = True
         self.info["numDiag_state"] = True
-        self.info["numDiag_text"] = "à gauche"
+#       self.info["numDiag_text"] = "à gauche"
         self.info["color_state"] = True
-        self.info["color_text"] = "à gauche"
+#       self.info["color_text"] = "à gauche"
         self.info["format_text"] = "portrait"
         self.info["flip_state"] = True
         self.info["legend_state"] = True
@@ -190,9 +190,6 @@ class MainWindow(QMainWindow):
         # images
         self.info["page"] = None
         self.info["boxes"] = list()
-
-        # identifiant du diagramme à ouvrir dans l'éditeur graphique:
-        self.info["active_editor"] = 0
 
         i = 0
         while i < self.info["max_diags"]:
@@ -499,7 +496,18 @@ class MainWindow(QMainWindow):
 
     # Divers
     def preview(self):
-        print("Afficher la page")
+        self.test = ""
+        i = 1
+        for fen in self.info["fens"]:
+            self.test = test_fen(fen)
+            if self.test != "OK":
+                self.test += " dans le fen n°"
+                self.test += str(i)
+
+                alertDialog = ViewAlertDialog(self)
+                alertDialog.exec()
+                return(0)
+            i += 1
 
     def print(self):
         print("Imprimer")
@@ -553,9 +561,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
     def openEdit(self):
-        # le numéro du fen à éditer est gardé en mémoire dans le dico principal
-        # ouverture de l'éditeur
         self.info["active_editor"] = self.sender().id
+        test = test_fen(self.info["fens"][self.info["active_editor"]])
+        if test != "OK":
+            self.info["fens"][self.info["active_editor"]] ="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w" 
+            alertDialog = EditAlertDialog(self)
+            alertDialog.exec()
+
         dialog = EditDialog(self)
         dialog.exec()
 
@@ -1087,6 +1099,23 @@ class EditDialog(QDialog):
         self.parent().info["arrows"][self.parent().info["active_editor"]]=self.printed_arrows
         self.done(1)
 
+class EditAlertDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Erreur")
+        label = QLabel("Le code saisi est incorrect.\nLa position de départ sera chargée par défaut.")
+        closeDialog = QPushButton("Ok")
+        closeDialog.clicked.connect(self.pushQuit)
+
+        layout = QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(closeDialog)
+        self.setLayout(layout)
+
+    def pushQuit(self):
+        self.close()
+
 class PropDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1448,6 +1477,96 @@ class SaveBeforeDialog(QDialog):
 
     def cancel_clicked(self):
         self.done(3)
+
+class ViewDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        temp_jpg = os.path.join("temp","temp.jpg")
+        pixmap = QPixmap(temp_jpg)
+        self.label = QLabel()
+        if self.parent().parent().info["format"] == "portrait":
+            self.label.setFixedSize(473, 668)
+            self.setFixedSize(493, 733)
+        else:
+            self.label.setFixedSize(891, 630)
+            self.setFixedSize(911, 690)
+        
+        self.label.setPixmap(pixmap)
+        self.label.setScaledContents(True)
+
+        self.save_page_push = QPushButton("Enregistrer la page")
+        self.save_page_push.id = "page"
+        self.save_page_push.clicked.connect(self.push)
+        self.save_diags_push = QPushButton("Enregistrer les diagrammes")
+        self.save_diags_push.id = "diags"
+        self.save_diags_push.clicked.connect(self.push)
+        self.cancel_push = QPushButton("Annuler")
+        self.cancel_push.id = "cancel"
+        self.cancel_push.clicked.connect(self.push)
+
+        page_layout = QVBoxLayout()
+        page_layout.setStretchFactor(self.label, 3)
+        buttons_layout = QHBoxLayout()
+
+        buttons_layout.addWidget(self.save_page_push)
+        buttons_layout.addWidget(self.save_diags_push)
+        buttons_layout.addWidget(self.cancel_push)
+
+        page_layout.addWidget(self.label)
+        page_layout.addLayout(buttons_layout)
+
+        self.setLayout(page_layout)
+
+    def push(self):
+        if self.sender().id == "page":
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+            if fileName:
+                if not re.search('[.]png$', fileName):
+                    fileName += '.png'
+                self.parent().parent().info["page"].save(fileName)
+
+        elif self.sender().id == "diags":
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+            if fileName:
+                if re.search('[.]png$', fileName):
+                    fileName += 'png'
+                i = 0
+                for box in self.parent().parent().info["boxes"]:
+                    if self.parent().parent().info["index_state"]:
+                        box.save(fileName + str(self.parent().parent().info["index_value"] + i) + '.png')
+                    else:
+                        box.save(fileName + str(i + 1) + '.png')
+                    i += 1
+        elif self.sender().id == "cancel":
+            self.close()
+
+class ViewAlertDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Erreur")
+        label = QLabel(self.parent().test)
+        closeDialog = QPushButton("Ok")
+        closeDialog.clicked.connect(self.pushQuit)
+
+        layout = QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(closeDialog)
+        self.setLayout(layout)
+
+    def pushQuit(self):
+        self.close()
+
+class Alert(QDialog):
+    def __init__(self, error):
+        super().__init__()
+
+        self.setWindowTitle("Erreur")
+        alert_msg = QLabel(error)
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(alert_msg)
+        self.setLayout(self.layout)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
