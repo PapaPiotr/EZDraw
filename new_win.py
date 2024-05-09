@@ -2,6 +2,7 @@ import os
 from pickle import load
 import sys
 import re
+import copy
 from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QSizePolicy, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
@@ -15,7 +16,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
         
         self.mainWidget = QWidget()
-        self.activeFile = ""
 
         self.setCentralWidget(self.mainWidget)
 
@@ -30,8 +30,8 @@ class MainWindow(QMainWindow):
         self.mainWidget.setLayout(self.layMain)
 
         self.info = {}
-        self.implement_dico()
-
+        self. changedFile = False
+        self.implement_dict()
         
         # Définition des actions
         self.act_Settings = QAction(QIcon.fromTheme("document-properties"), "&Paramètres", self)
@@ -56,8 +56,8 @@ class MainWindow(QMainWindow):
         self.act_Open = QAction(QIcon.fromTheme("document-open"), "Ouvrir un formulaire", self)
         self.act_Open.setStatusTip("Ouvrir un formulaire")
         self.act_Open.setShortcut(QKeySequence("Ctrl+o"))
-#       self.act_Open.triggered.connect(self.openDoc)
-        self.act_Open.triggered.connect(self.update_display)
+        self.act_Open.triggered.connect(self.openDoc)
+#       self.act_Open.triggered.connect(self.update_display)
 
         self.act_Undo = QAction(QIcon.fromTheme("edit-undo"), "Annuler", self)
         self.act_Undo.setStatusTip("Annuler")
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
 
         self.load_widgets()
 
-    def implement_dico(self):
+    def implement_dict(self):
         self.info["max_cols"] = 5
         self.info["max_diags"] = 15
 
@@ -198,6 +198,27 @@ class MainWindow(QMainWindow):
             self.info["arrows"].append([])
             i += 1
         i = 0
+        self.load_default_settings()
+
+    def load_default_settings(self):
+        fileName = os.path.join("settings","default.txt")
+
+        with open(fileName, "r") as file:
+            settings = file.read().split("|")
+            for setting in settings:
+                sett = setting.split(",")
+
+                if re.search("state",sett[0]):
+                    if sett[1] == "True":
+                        self.info[sett[0]] = True
+                    else:
+                        self.info[sett[0]] = False
+
+                elif re.search("text",sett[0]):
+                    self.info[sett[0]] = sett[1]
+
+                elif re.search("value",sett[0]):
+                    self.info[sett[0]] = int(sett[1])
 
     def load_widgets(self):
         i = 1
@@ -250,109 +271,12 @@ class MainWindow(QMainWindow):
             self.numDiag_value.valueChanged.connect(self.change_numDiag_value)
             self.layNum.addWidget(self.numDiag_value, 1, 1)
 
-    def change_title_text(self, text):
-        self.info["title_text"] = text
-
-    def change_fens(self, text):
-        i = 0
-        while i < self.info["max_diags"]:
-            if self.sender().id == i:
-                self.info["fens"][i] = text
-                break
-            i += 1
-
-    def change_legends(self, text):
-        i = 0
-        while i < self.info["max_diags"]:
-            if self.sender().id == i:
-                self.info["legends"][i] = text
-                break
-            i += 1
-
-    def change_numPage_value(self, value):
-        self.info["numPage_value"] = value
-
-    def change_numDiag_value(self, value):
-        self.info["numDiag_value"] = value
-
-    def load_default_settings(self):
-        fileName = os.path.join("settings","default.txt")
-
-        with open(fileName, "r") as file:
-            settings = file.read().split("|")
-            for setting in settings:
-                sett = setting.split(",")
-
-                if re.search("state",sett[0]):
-                    if sett[1] == "True":
-                        self.info[sett[0]] = True
-                    else:
-                        self.info[sett[0]] = False
-
-                elif re.search("text",sett[0]):
-                    self.info[sett[0]] = sett[1]
-
-                elif re.search("value",sett[0]):
-                    self.info[sett[0]] = int(sett[1])
-
-    def update_display(self, result):
-        if result == QDialog.DialogCode.Accepted:
-            for widget in self.centralWidget().findChildren(QWidget):
-                widget.deleteLater()
-
-            self.load_widgets()
-
-    def saveBefore(self, result):
-        if result == QDialog.DialogCode.Accepted:
-            self.saveAs()
-            self.newFileName = "Nouveau document"
-            self.setWindowTitle(self.newFileName + " | CuteFEN Diagramm Generator")
-
-            self.info["fens"].clear()
-            self.info["legends"].clear()
-            self.info["symbols"].clear()
-            self.info["arrows"].clear()
-
-            i = 0
-            while i < self.info["max_diags"]:
-                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
-                self.info["legends"].append("Position de départ")
-                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
-                self.info["arrows"].append([])
-                i += 1
-
-        self.load_default_settings()
-        self.update_display(QDialog.DialogCode.Accepted)
-
-    def newDoc(self):
-        dialog = SaveBeforeDialog(self)
-        dialog.finished.connect(self.saveBefore)
-        dialog.exec()
-
-#       self.newFileName = "Nouveau document"
-#       self.setWindowTitle(self.newFileName + " | CuteFEN Diagramm Generator")
-
-#       self.info["fens"].clear()
-#       self.info["legends"].clear()
-#       self.info["symbols"].clear()
-#       self.info["arrows"].clear()
-
-#       i = 0
-#       while i < self.info["max_diags"]:
-#           self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
-#           self.info["legends"].append("Position de départ")
-#           self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
-#           self.info["arrows"].append([])
-#           i += 1
-
-#       self.load_default_settings()
-#       self.update_display(QDialog.DialogCode.Accepted)
-
     def saveForm(self):
-        if self.currentFileName != self.newFileName or self.currentFileName == "Nouveau document":
+        if self.newFileName != self.currentFileName or self.newFileName == "":
             self.saveAs()
         else:
-            with open(self.newFileName, "w") as file:
+            print(self.currentFileName)
+            with open(self.currentFileName, "w") as file:
                 file.write("title_state,")
                 file.write(str(self.info["title_state"]) + "|")
                 file.write("numDiag_state,")
@@ -390,62 +314,162 @@ class MainWindow(QMainWindow):
                 file.write(self.info["title_text"] + "|")
                 file.write("numPage_value,")
                 file.write(str(self.info["numPage_value"]) + "|")
-                file.write("numDiag_value")
-                file.write(str(self.info["numDiag_value"]) + "|")
+                file.write("numDiag_value,")
+                file.write(str(self.info["numDiag_value"]))
 
                 for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
                     file.write( '\n' + fen + '|' + leg + '|' + sym)
+                
+            self.changedFile = False
 
     def saveAs(self):
         self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","save","")
-        self.currentFileName = self.newFileName
-        self.setWindowTitle(os.path.basename(self.newFileName) + " | CuteFEN Diagramm Generator")
-        with open(self.newFileName, "w") as file:
-            file.write("title_state,")
-            file.write(str(self.info["title_state"]) + "|")
-            file.write("numDiag_state,")
-            file.write(str(self.info["numDiag_state"]) + "|")
-            file.write("numDiag_text,")
-            file.write(str(self.info["numDiag_text"]) + "|")
-            file.write("color_state,")
-            file.write(str(self.info["color_state"]) + "|")
-            file.write("color_text,")
-            file.write(str(self.info["color_text"]) + "|")
-            file.write("format_text,")
-            file.write(self.info["format_text"] + "|")
-            file.write("flip_state,")
-            file.write(str(self.info["flip_state"]) + "|")
-            file.write("legend_state,")
-            file.write(str(self.info["legend_state"]) + "|")
-            file.write("cols_value,")
-            file.write(str(self.info["cols_value"]) + "|")
-            file.write("diags_value,")
-            file.write(str(self.info["diags_value"]) + "|")
-            file.write("margin_value,")
-            file.write(str(self.info["margin_value"]) + "|")
-            file.write("coord_state,")
-            file.write(str(self.info["coord_state"]) + "|")
-            file.write("down_state,")
-            file.write(str(self.info["down_state"]) + "|")
-            file.write("up_state,")
-            file.write(str(self.info["up_state"]) + "|")
-            file.write("left_state,")
-            file.write(str(self.info["left_state"]) + "|")
-            file.write("right_state,")
-            file.write(str(self.info["right_state"]) + "|")
+        if os.path.basename(self.newFileName) != "":
+            self.currentFileName = self.newFileName
+            self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
+            with open(self.currentFileName, "w") as file:
+                file.write("title_state,")
+                file.write(str(self.info["title_state"]) + "|")
+                file.write("numDiag_state,")
+                file.write(str(self.info["numDiag_state"]) + "|")
+                file.write("numDiag_text,")
+                file.write(str(self.info["numDiag_text"]) + "|")
+                file.write("color_state,")
+                file.write(str(self.info["color_state"]) + "|")
+                file.write("color_text,")
+                file.write(str(self.info["color_text"]) + "|")
+                file.write("format_text,")
+                file.write(self.info["format_text"] + "|")
+                file.write("flip_state,")
+                file.write(str(self.info["flip_state"]) + "|")
+                file.write("legend_state,")
+                file.write(str(self.info["legend_state"]) + "|")
+                file.write("cols_value,")
+                file.write(str(self.info["cols_value"]) + "|")
+                file.write("diags_value,")
+                file.write(str(self.info["diags_value"]) + "|")
+                file.write("margin_value,")
+                file.write(str(self.info["margin_value"]) + "|")
+                file.write("coord_state,")
+                file.write(str(self.info["coord_state"]) + "|")
+                file.write("down_state,")
+                file.write(str(self.info["down_state"]) + "|")
+                file.write("up_state,")
+                file.write(str(self.info["up_state"]) + "|")
+                file.write("left_state,")
+                file.write(str(self.info["left_state"]) + "|")
+                file.write("right_state,")
+                file.write(str(self.info["right_state"]) + "|")
 
-            file.write("title_text,")
-            file.write(self.info["title_text"] + "|")
-            file.write("numPage_value,")
-            file.write(str(self.info["numPage_value"]) + "|")
-            file.write("numDiag_value")
-            file.write(str(self.info["numDiag_value"]) + "|")
+                file.write("title_text,")
+                file.write(self.info["title_text"] + "|")
+                file.write("numPage_value,")
+                file.write(str(self.info["numPage_value"]) + "|")
+                file.write("numDiag_value,")
+                file.write(str(self.info["numDiag_value"]))
 
-            for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
-                file.write( '\n' + fen + '|' + leg + '|' + sym)
+                for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
+                    file.write( '\n' + fen + '|' + leg + '|' + sym)
+                for arr in self.info["arrows"]:
+                    arrows_num = 0
+                    for a in arr:
+                        arrows_num += 1
+                    i = 1
+                    if arrows_num != 0:
+                        file.write('|')
+                    for a in arr:
+                        file.write(a[0] + ' ' + str(a[1]) + ' ' + str(a[2]))
+                        if i < arrows_num:
+                            file.write(',')
+
+            self.changedFile = False
+
+    def saveBeforeNew(self, result):
+        if result == QDialog.DialogCode.Accepted:
+            self.saveAs()
+            self.currentFileName = "Nouveau document"
+            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
+
+            self.info["fens"].clear()
+            self.info["legends"].clear()
+            self.info["symbols"].clear()
+            self.info["arrows"].clear()
+
+            i = 0
+            while i < self.info["max_diags"]:
+                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+                self.info["legends"].append("Position de départ")
+                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+                self.info["arrows"].append([])
+                i += 1
+
+        if result == QDialog.DialogCode.Rejected:
+            self.currentFileName = "Nouveau document"
+            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
+
+        self.load_default_settings()
+        self.update_display(QDialog.DialogCode.Accepted)
+
+    def update_display(self, result):
+        if result == QDialog.DialogCode.Accepted:
+            for widget in self.centralWidget().findChildren(QWidget):
+                widget.deleteLater()
+
+            self.load_widgets()
+
+    def newDoc(self):
+        if self.changedFile:
+            dialog = SaveBeforeDialog(self)
+            dialog.finished.connect(self.saveBeforeNew)
+            dialog.exec()
 
     def openDoc(self):
-        print("Ouvrir un formulaire")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","save","")
+        if os.path.basename(fileName) == "":
+            return(0)
+        else:
+            self.currentFileName = fileName
+            self.newFileName = fileName
+
+        self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
+
+        with open(fileName, 'r') as file:
+            fields = file.read().split("\n")
+            firsLine = fields[0].split("|")
+            for pair in firsLine:
+                info = pair.split(",")
+                if re.search("state", info[0]):
+                    if info[1] == "True":
+                        self.info[info[0]] = True
+                    else:
+                        self.info[info[0]] = False
+                elif re.search("value", info[0]):
+                    self.info[info[0]] = int(info[1])
+                elif re.search("text", info[0]):
+                    self.info[info[0]] = info[1]
+
+            i = 1
+            while i <= self.info["diags_value"]:
+                line = fields[i].split('|')
+                self.info['fens'][i-1]=line[0]
+                self.info['legends'][i-1]=line[1]
+                self.info['symbols'][i-1]=line[2]
+                fields_num = 0
+                for l in line:
+                    fields_num += 1
+
+                if fields_num > 3:
+                    arrows = line[3].split(',')
+                    for arrow in arrows:
+                        arr = arrow.split(' ')
+                        self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
+                i += 1
+
+        for widget in self.centralWidget().findChildren(QWidget):
+            widget.deleteLater()
+
+        self.load_widgets()
+        self.changedFile = False
 
     def preview(self):
         print("Afficher la page")
@@ -470,11 +494,66 @@ class MainWindow(QMainWindow):
     def openAbout(self):
         print("About")
 
-    def quit(self):
-        print("Quitter")
+    def saveBeforQuit(self, result):
+        if result == QDialog.DialogCode.Accepted:
+            self.saveAs()
+            self.currentFileName = "Nouveau document"
+            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
 
-    def truc(self,s):
-        print("click",s)
+            self.info["fens"].clear()
+            self.info["legends"].clear()
+            self.info["symbols"].clear()
+            self.info["arrows"].clear()
+
+            i = 0
+            while i < self.info["max_diags"]:
+                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
+                self.info["legends"].append("Position de départ")
+                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
+                self.info["arrows"].append([])
+                i += 1
+
+        if result == QDialog.DialogCode.Rejected:
+            self.currentFileName = "Nouveau document"
+            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
+
+        self.close()
+
+    def quit(self):
+        dialog = SaveBeforeDialog(self)
+        dialog.finished.connect(self.saveBeforQuit)
+        dialog.exec()
+
+    # Slots des Widgets
+    def change_title_text(self, text):
+        self.info["title_text"] = text
+        self.changedFile = True
+
+    def change_fens(self, text):
+        i = 0
+        while i < self.info["max_diags"]:
+            if self.sender().id == i:
+                self.info["fens"][i] = text
+                break
+            i += 1
+        self.changedFile = True
+
+    def change_legends(self, text):
+        i = 0
+        while i < self.info["max_diags"]:
+            if self.sender().id == i:
+                self.info["legends"][i] = text
+                break
+            i += 1
+        self.changedFile = True
+
+    def change_numPage_value(self, value):
+        self.info["numPage_value"] = value
+        self.changedFile = True
+
+    def change_numDiag_value(self, value):
+        self.info["numDiag_value"] = value
+        self.changedFile = True
 
 class PropDialog(QDialog):
     finished = pyqtSignal(int)
@@ -485,7 +564,7 @@ class PropDialog(QDialog):
 
 
         self.info = {}
-        self.implement_dico()
+        self.implement_dicts()
 
         main_layout = QVBoxLayout()
 
@@ -623,7 +702,7 @@ class PropDialog(QDialog):
 
         self.load_default_settings()
 
-    def implement_dico(self):
+    def implement_dicts(self):
         for main_info in self.parent().info.items():
             self.info[main_info[0]] = main_info[1]
 
