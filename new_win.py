@@ -1,10 +1,8 @@
 import os
-from pickle import load
 import sys
 import re
-import copy
 from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt 
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QSizePolicy, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 
 class MainWindow(QMainWindow):
@@ -57,7 +55,6 @@ class MainWindow(QMainWindow):
         self.act_Open.setStatusTip("Ouvrir un formulaire")
         self.act_Open.setShortcut(QKeySequence("Ctrl+o"))
         self.act_Open.triggered.connect(self.openDoc)
-#       self.act_Open.triggered.connect(self.update_display)
 
         self.act_Undo = QAction(QIcon.fromTheme("edit-undo"), "Annuler", self)
         self.act_Undo.setStatusTip("Annuler")
@@ -144,6 +141,7 @@ class MainWindow(QMainWindow):
 
         self.load_widgets()
 
+    # Chargement des données de la page
     def implement_dict(self):
         self.info["max_cols"] = 5
         self.info["max_diags"] = 15
@@ -271,11 +269,22 @@ class MainWindow(QMainWindow):
             self.numDiag_value.valueChanged.connect(self.change_numDiag_value)
             self.layNum.addWidget(self.numDiag_value, 1, 1)
 
+    def openProp(self):
+        dialog = PropDialog(self)
+        dialog.exec()
+
+        result = dialog.result()
+        if result == 1:
+            for widget in self.centralWidget().findChildren(QWidget):
+                widget.deleteLater()
+
+            self.load_widgets()
+
+    # Manipulation des fichiers de chargement/Sauvegarde
     def saveForm(self):
         if self.newFileName != self.currentFileName or self.newFileName == "":
             self.saveAs()
         else:
-            print(self.currentFileName)
             with open(self.currentFileName, "w") as file:
                 file.write("title_state,")
                 file.write(str(self.info["title_state"]) + "|")
@@ -320,6 +329,7 @@ class MainWindow(QMainWindow):
                 for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
                     file.write( '\n' + fen + '|' + leg + '|' + sym)
                 
+            self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
             self.changedFile = False
 
     def saveAs(self):
@@ -384,46 +394,40 @@ class MainWindow(QMainWindow):
 
             self.changedFile = False
 
-    def saveBeforeNew(self, result):
-        if result == QDialog.DialogCode.Accepted:
-            self.saveAs()
-            self.currentFileName = "Nouveau document"
-            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
-
-            self.info["fens"].clear()
-            self.info["legends"].clear()
-            self.info["symbols"].clear()
-            self.info["arrows"].clear()
-
-            i = 0
-            while i < self.info["max_diags"]:
-                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
-                self.info["legends"].append("Position de départ")
-                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
-                self.info["arrows"].append([])
-                i += 1
-
-        if result == QDialog.DialogCode.Rejected:
-            self.currentFileName = "Nouveau document"
-            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
-
-        self.load_default_settings()
-        self.update_display(QDialog.DialogCode.Accepted)
-
-    def update_display(self, result):
-        if result == QDialog.DialogCode.Accepted:
-            for widget in self.centralWidget().findChildren(QWidget):
-                widget.deleteLater()
-
-            self.load_widgets()
+        else:
+            self.newFileName = self.currentFileName
 
     def newDoc(self):
         if self.changedFile:
-            dialog = SaveBeforeDialog(self)
-            dialog.finished.connect(self.saveBeforeNew)
+            dialog = SaveBeforeDialog()
             dialog.exec()
+            result = dialog.result()
+
+            if result == 1:
+                self.saveForm()
+            elif result == 3:
+                return(0)
+
+        self.implement_dict()
+        self.load_default_settings()
+        for widget in self.centralWidget().findChildren(QWidget):
+            widget.deleteLater()
+
+        self.load_widgets()
+        self.currentFileName = "Nouveau document"
+        self.newFileName = ""
+        self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
 
     def openDoc(self):
+        if self.changedFile:
+            dialog = SaveBeforeDialog()
+            dialog.exec()
+            result = dialog.result()
+
+            if result == 1:
+                self.saveForm()
+            elif result == 3:
+                return(0)
         fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","save","")
         if os.path.basename(fileName) == "":
             return(0)
@@ -471,16 +475,24 @@ class MainWindow(QMainWindow):
         self.load_widgets()
         self.changedFile = False
 
+    def quit(self):
+        if self.changedFile:
+            dialog = SaveBeforeDialog()
+            dialog.exec()
+            result = dialog.result()
+
+            if result == 1:
+                self.saveForm()
+            elif result == 3:
+                return(0)
+        self.close()
+
+    # Divers
     def preview(self):
         print("Afficher la page")
 
     def print(self):
         print("Imprimer")
-
-    def openProp(self):
-        dialog = PropDialog(self)
-        dialog.finished.connect(self.update_display)
-        dialog.exec()
 
     def undo(self):
         print("annuler")
@@ -494,40 +506,11 @@ class MainWindow(QMainWindow):
     def openAbout(self):
         print("About")
 
-    def saveBeforQuit(self, result):
-        if result == QDialog.DialogCode.Accepted:
-            self.saveAs()
-            self.currentFileName = "Nouveau document"
-            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
-
-            self.info["fens"].clear()
-            self.info["legends"].clear()
-            self.info["symbols"].clear()
-            self.info["arrows"].clear()
-
-            i = 0
-            while i < self.info["max_diags"]:
-                self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
-                self.info["legends"].append("Position de départ")
-                self.info["symbols"].append("0000000000000000000000000000000000000000000000000000000000000000")
-                self.info["arrows"].append([])
-                i += 1
-
-        if result == QDialog.DialogCode.Rejected:
-            self.currentFileName = "Nouveau document"
-            self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
-
-        self.close()
-
-    def quit(self):
-        dialog = SaveBeforeDialog(self)
-        dialog.finished.connect(self.saveBeforQuit)
-        dialog.exec()
-
     # Slots des Widgets
     def change_title_text(self, text):
         self.info["title_text"] = text
         self.changedFile = True
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
     def change_fens(self, text):
         i = 0
@@ -537,6 +520,7 @@ class MainWindow(QMainWindow):
                 break
             i += 1
         self.changedFile = True
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
     def change_legends(self, text):
         i = 0
@@ -546,25 +530,27 @@ class MainWindow(QMainWindow):
                 break
             i += 1
         self.changedFile = True
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
     def change_numPage_value(self, value):
         self.info["numPage_value"] = value
         self.changedFile = True
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
     def change_numDiag_value(self, value):
         self.info["numDiag_value"] = value
         self.changedFile = True
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
 
 class PropDialog(QDialog):
-    finished = pyqtSignal(int)
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Propriétés")
-
+        self.setWindowTitle("Paramètres")
 
         self.info = {}
         self.implement_dicts()
+        self.changedInfo = False
 
         main_layout = QVBoxLayout()
 
@@ -596,7 +582,6 @@ class PropDialog(QDialog):
         self.format_combo.setCurrentText(self.info["format_text"])
         page_tab_layout.addWidget(self.format_combo,2,1)
 
-
         page_tab_layout.addWidget(QLabel("Nombre de diagrammes"),3,0)
         self.diags_value = QSpinBox()
         self.diags_value.setRange(1,15)
@@ -617,7 +602,6 @@ class PropDialog(QDialog):
         self.margin_value.setRange(0, 200)
         self.margin_value.valueChanged.connect(self.set_margin_value)
         page_tab_layout.addWidget(self.margin_value,5,1)
-
 
         self.flip_state = QCheckBox("Retourner le plateau quand le trait est aux noirs")
         self.flip_state.clicked.connect(self.set_flip_state)
@@ -681,15 +665,15 @@ class PropDialog(QDialog):
 
         bottom_layout = QHBoxLayout()
         self.save_settings_push = QPushButton("Définir comme paramètres par défaut")
-        self.save_settings_push.clicked.connect(self.save_settings)
+        self.save_settings_push.clicked.connect(self.new_save_settings)
         bottom_layout.addWidget(self.save_settings_push)
 
         self.exit_push = QPushButton("Fermer")
-        self.exit_push.clicked.connect(self.exit)
+        self.exit_push.clicked.connect(self.new_exit)
         bottom_layout.addWidget(self.exit_push)
         
         self.cancel_push = QPushButton("Annuler")
-        self.cancel_push.clicked.connect(self.cancel)
+        self.cancel_push.clicked.connect(self.new_cancel)
         bottom_layout.addWidget(self.cancel_push)
 
         main_layout.addWidget(tab_widget)
@@ -698,111 +682,148 @@ class PropDialog(QDialog):
         self.setLayout(main_layout)
         self.setWindowTitle("Paramètres")
 
-    
-
-        self.load_default_settings()
-
     def implement_dicts(self):
         for main_info in self.parent().info.items():
             self.info[main_info[0]] = main_info[1]
 
-    def load_default_settings(self):
-        pass
-
     def set_title_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["title_state"] = True
         else:
             self.info["title_state"] = False
 
     def set_numPage_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["numPage_state"] = True
         else:
             self.info["numPage_state"] = False
 
     def set_format_text(self, text):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if text == "portrait":
             self.info["format_text"] = "portrait"
         else:
             self.info["format_text"] = "paysage"
 
     def set_diags_value(self, value):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         self.info["diags_value"] = value
 
     def set_cols_value(self, value):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         self.info["cols_value"] = value
 
     def set_margin_value(self, value):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         self.info["margin_value"] = value
 
     def set_flip_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["flip_state"] = True
         else:
             self.info["flip_state"] = False
 
     def set_color_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["color_state"] = True
         else:
             self.info["color_state"] = False
 
     def set_color_text(self, text):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if text == "à gauche":
             self.info["color_text"] = "à gauche"
         else:
             self.info["color_text"] = "à droite"
 
     def set_numDiag_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["numDiag_state"] = True
         else:
             self.info["numDiag_state"] = False
 
     def set_numDiag_text(self, text):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if text == "à gauche":
             self.info["numDiag_text"] = "à gauche"
         else:
             self.info["numDiag_text"] = "à droite"
 
     def set_legend_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["legend_state"] = True
         else:
             self.info["legend_state"] = False
 
     def set_coord_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["coord_state"] = True
+            self.up_state.setEnabled(True)
+            self.down_state.setEnabled(True)
+            self.right_state.setEnabled(True)
+            self.left_state.setEnabled(True)
         else:
             self.info["coord_state"] = False
+            self.up_state.setEnabled(False)
+            self.down_state.setEnabled(False)
+            self.right_state.setEnabled(False)
+            self.left_state.setEnabled(False)
         
     def set_up_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["up_state"] = True
         else:
             self.info["up_state"] = False
 
     def set_down_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["down_state"] = True
         else:
             self.info["down_state"] = False
 
     def set_left_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["left_state"] = True
         else:
             self.info["left_state"] = False
 
     def set_right_state(self, state):
+        self.changedInfo = True
+        self.setWindowTitle("Paramètres*")
         if state:
             self.info["right_state"] = True
         else:
             self.info["right_state"] = False
 
-    def save_settings(self):
+    def new_save_settings(self):
+        self.changedInfo = False
+        self.setWindowTitle("Paramètres")
         fileName = os.path.join("settings", "default.txt")
         with open(fileName, "w") as file:
             file.write("title_state,")
@@ -839,20 +860,16 @@ class PropDialog(QDialog):
             file.write(str(self.info["left_state"]) + "|")
             file.write("right_state,")
             file.write(str(self.info["right_state"]))
-        self.close()
 
-    def cancel(self):
-        self.finished.emit(QDialog.DialogCode.Rejected)
-        self.close()
-    
-    def exit(self):
+    def new_exit(self):
         for diag_info in self.info.items():
             self.parent().info[diag_info[0]] = diag_info[1]
-        self.finished.emit(QDialog.DialogCode.Accepted)
-        self.close()
+        self.done(1)
+
+    def new_cancel(self):
+        self.done(3)
 
 class SaveBeforeDialog(QDialog):
-    finished = pyqtSignal(int)
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -879,15 +896,13 @@ class SaveBeforeDialog(QDialog):
         self.setLayout(self.main_layout)
         
     def save_clicked(self):
-        self.finished.emit(QDialog.DialogCode.Accepted)
-        self.close()
+        self.done(1)
 
     def doNotSave_clicked(self):
-        self.finished.emit(QDialog.DialogCode.Rejected)
-        self.close()
+        self.done(2)
 
     def cancel_clicked(self):
-        self.close()
+        self.done(3)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
