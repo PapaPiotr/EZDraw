@@ -32,7 +32,8 @@ class MainWindow(QMainWindow):
         self.mainWidget.setLayout(self.layMain)
 
         self.info = {}
-        self. changedFile = False
+        self.changedFile = False
+        self.changedInfo = False
         self.implement_dict()
         
         # Définition des actions
@@ -118,7 +119,7 @@ class MainWindow(QMainWindow):
 
         # Définition de la barre de menu
         self.menu = self.menuBar()
-        self.fileMenu = self.menu.addMenu("&File")
+        self.fileMenu = self.menu.addMenu("&Fichier")
 
         self.fileMenu.addAction(self.act_New)
         self.fileMenu.addSeparator()
@@ -187,6 +188,7 @@ class MainWindow(QMainWindow):
         self.info["page"] = None
         self.info["boxes"] = list()
 
+
         i = 0
         while i < self.info["max_diags"]:
             self.info["fens"].append("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
@@ -228,7 +230,7 @@ class MainWindow(QMainWindow):
             self.layTitle.addWidget(self.title_text, 0, 1)
 
         # Section de formulaire
-        self.layForm.addWidget(QLabel("Saisir un FEN ou un identifiant de problème Lichess"), 0, 1)
+        self.layForm.addWidget(QLabel("Saisir un FEN ou un identifiant de problème Lichess            "), 0, 1)
 
         if self.info["legend_state"]:
             self.layForm.addWidget(QLabel("Saisir une légende"), 0, 3)
@@ -282,7 +284,10 @@ class MainWindow(QMainWindow):
             for widget in self.centralWidget().findChildren(QWidget):
                 widget.deleteLater()
 
+
             self.load_widgets()
+            self.adjustSize()
+
 
     def saveForm(self):
         if self.newFileName != self.currentFileName or self.newFileName == "":
@@ -1121,11 +1126,13 @@ class PropDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Paramètres")
+        if self.parent().changedInfo:
+            self.setWindowTitle("Paramètres*")
+        else:
+            self.setWindowTitle("Paramètres")
 
         self.info = {}
         self.implement_dicts()
-        self.changedInfo = False
 
         main_layout = QVBoxLayout()
 
@@ -1254,14 +1261,13 @@ class PropDialog(QDialog):
         main_layout.addLayout(bottom_layout)
 
         self.setLayout(main_layout)
-        self.setWindowTitle("Paramètres")
 
     def implement_dicts(self):
         for main_info in self.parent().info.items():
             self.info[main_info[0]] = main_info[1]
 
     def set_title_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["title_state"] = True
@@ -1269,7 +1275,7 @@ class PropDialog(QDialog):
             self.info["title_state"] = False
 
     def set_numPage_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["numPage_state"] = True
@@ -1277,7 +1283,7 @@ class PropDialog(QDialog):
             self.info["numPage_state"] = False
 
     def set_format_text(self, text):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if text == "portrait":
             self.info["format_text"] = "portrait"
@@ -1285,22 +1291,22 @@ class PropDialog(QDialog):
             self.info["format_text"] = "paysage"
 
     def set_diags_value(self, value):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         self.info["diags_value"] = value
 
     def set_cols_value(self, value):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         self.info["cols_value"] = value
 
     def set_margin_value(self, value):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         self.info["margin_value"] = value
 
     def set_flip_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["flip_state"] = True
@@ -1308,7 +1314,7 @@ class PropDialog(QDialog):
             self.info["flip_state"] = False
 
     def set_color_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["color_state"] = True
@@ -1316,7 +1322,7 @@ class PropDialog(QDialog):
             self.info["color_state"] = False
 
     def set_numDiag_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["numDiag_state"] = True
@@ -1324,7 +1330,7 @@ class PropDialog(QDialog):
             self.info["numDiag_state"] = False
 
     def set_legend_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["legend_state"] = True
@@ -1332,7 +1338,7 @@ class PropDialog(QDialog):
             self.info["legend_state"] = False
 
     def set_coord_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["coord_state"] = True
@@ -1348,7 +1354,7 @@ class PropDialog(QDialog):
             self.left_state.setEnabled(False)
         
     def set_up_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["up_state"] = True
@@ -1356,7 +1362,7 @@ class PropDialog(QDialog):
             self.info["up_state"] = False
 
     def set_down_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["down_state"] = True
@@ -1364,7 +1370,7 @@ class PropDialog(QDialog):
             self.info["down_state"] = False
 
     def set_left_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["left_state"] = True
@@ -1372,7 +1378,7 @@ class PropDialog(QDialog):
             self.info["left_state"] = False
 
     def set_right_state(self, state):
-        self.changedInfo = True
+        self.parent().changedInfo = True
         self.setWindowTitle("Paramètres*")
         if state:
             self.info["right_state"] = True
@@ -1380,7 +1386,7 @@ class PropDialog(QDialog):
             self.info["right_state"] = False
 
     def new_save_settings(self):
-        self.changedInfo = False
+        self.parent().changedInfo = False
         self.setWindowTitle("Paramètres")
         fileName = os.path.join("settings", "default.txt")
         with open(fileName, "w") as file:
