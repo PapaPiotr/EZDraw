@@ -3,10 +3,11 @@ import sys
 import re
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
-from PyQt6.QtGui import QAction, QGradient, QIcon, QKeySequence, QPixmap, QMouseEvent, QCursor
-from PyQt6.QtCore import QLine, QSize, Qt, QPoint
+from PyQt6.QtGui import QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPixmap, QMouseEvent, QCursor
+from PyQt6.QtCore import QLine, QSize, Qt, QPoint, QSizeF
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
-from new_fonctions import submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from new_fonctions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -37,6 +38,7 @@ class MainWindow(QMainWindow):
         # Définition des actions
         self.act_Settings = QAction(QIcon.fromTheme("document-properties"), "&Paramètres", self)
         self.act_Settings.setStatusTip("Paramètres")
+        self.act_Settings.setShortcut(QKeySequence("Ctrl+Shift+p"))
         self.act_Settings.triggered.connect(self.openProp)
 
         self.act_New = QAction(QIcon.fromTheme("document-new"), "Nouveau document", self)
@@ -144,7 +146,6 @@ class MainWindow(QMainWindow):
 
         self.load_widgets()
 
-    # Chargement des données de la page
     def implement_dict(self):
         self.info["max_cols"] = 5
         self.info["max_diags"] = 15
@@ -153,9 +154,7 @@ class MainWindow(QMainWindow):
         self.info["title_state"] = True 
         self.info["numPage_state"] = True
         self.info["numDiag_state"] = True
-#       self.info["numDiag_text"] = "à gauche"
         self.info["color_state"] = True
-#       self.info["color_text"] = "à gauche"
         self.info["format_text"] = "portrait"
         self.info["flip_state"] = True
         self.info["legend_state"] = True
@@ -182,9 +181,6 @@ class MainWindow(QMainWindow):
         self.info["arrows"] = list()
 
         # variables manipulées par le programme
-        self.info["trimmed_fens"] = list()
-        self.info["trimmed_legends"] = list()
-        self.info["trimmed_symbols"] = list()
         self.info["active_editor"] = int()
 
         # images
@@ -227,13 +223,14 @@ class MainWindow(QMainWindow):
         if self.info["title_state"] == True:
             self.layTitle.addWidget(QLabel("Titre : "), 0, 0)
             self.title_text = QLineEdit("")
+            self.title_text.setText(self.info["title_text"])
             self.title_text.textChanged.connect(self.change_title_text)
             self.layTitle.addWidget(self.title_text, 0, 1)
 
         # Section de formulaire
         self.layForm.addWidget(QLabel("Saisir un FEN ou un identifiant de problème Lichess"), 0, 1)
 
-        if self.info["legend_state"] == True:
+        if self.info["legend_state"]:
             self.layForm.addWidget(QLabel("Saisir une légende"), 0, 3)
 
         self.fens = list()
@@ -287,7 +284,6 @@ class MainWindow(QMainWindow):
 
             self.load_widgets()
 
-    # Manipulation des fichiers de chargement/Sauvegarde
     def saveForm(self):
         if self.newFileName != self.currentFileName or self.newFileName == "":
             self.saveAs()
@@ -509,8 +505,13 @@ class MainWindow(QMainWindow):
                 return(0)
             i += 1
 
+        submit(self, self.info)
+
+        view = ViewDialog(self)
+        view.exec()
+
     def print(self):
-        print("Imprimer")
+        print("imprimer")
 
     def undo(self):
         print("annuler")
@@ -580,9 +581,10 @@ class EditDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setWindowTitle("Édition du diagramme n°"+ str(self.parent().info["active_editor"]+1))
+
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.arrows_dir = os.path.join(self.current_dir, "arrows")
-        self.setFixedSize(820,690)
         def create_button(k,v):
             button = QPushButton()
             button.setFixedSize(75,75)
@@ -615,8 +617,6 @@ class EditDialog(QDialog):
         # creation de l'image du plateau
         self.board_dir = os.path.join(self.current_dir, 'board')
         empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
-#       self.board_img = Image.open(empty_board_path)
-#       self.board_img = self.board_img.resize((600,600))
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
         pieces_dir = os.path.join(self.current_dir, 'pieces')
@@ -694,7 +694,7 @@ class EditDialog(QDialog):
         self.empty_pos = QPushButton("Vider l'échiquier")
         self.empty_pos.clicked.connect(self.pos_click)
         self.empty_pos.id = 1
-        self.save_pos = QPushButton("Sauvegarder la position")
+        self.save_pos = QPushButton("Enregistrer l'image")
         self.save_pos.clicked.connect(self.pos_click)
         self.save_pos.id = 3
         self.submit = QPushButton("Valider")
@@ -702,7 +702,6 @@ class EditDialog(QDialog):
         self.submit.clicked.connect(self.submit_click)
 
         # création du label à afficher dans la fenêtre
-#       pixmap = QPixmap.fromImage(ImageQt(self.board_img))
 
         pixmap = QPixmap(empty_board_path)
         self.label = QLabel()
@@ -716,9 +715,12 @@ class EditDialog(QDialog):
         # création des boutons
         for k,v in self.infos.items():
             self.buttons.append(create_button(k,v))
+        for button in self.buttons:
+            button.setChecked(False)
 
         # pour récupérer la valeur de la pièce à coller dans l'éditeur
-        self.active_piece = '0'
+        # par défaut, le roi noir
+        self.active_piece = 'k'
         # pour récupérer la valeur de la pièce à déplacer dans l'éditeur
         self.dragged_piece = '0'
 
@@ -782,11 +784,14 @@ class EditDialog(QDialog):
         left_layout.addLayout(self.stack_layout)
         left_layout.addWidget(self.radio_white)
         left_layout.addWidget(self.radio_black)
-        bot_layout2.addWidget(self.start_pos)
-        bot_layout2.addWidget(self.empty_sym)
-        bot_layout2.addWidget(self.empty_pos)
-        bot_layout.addWidget(self.save_pos)
-        bot_layout.addWidget(self.submit)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(self.start_pos)
+        right_layout.addWidget(self.empty_pos)
+        right_layout.addWidget(self.empty_sym)
+        right_layout.addWidget(self.save_pos)
+        right_layout.addWidget(self.submit)
+        right_layout.setAlignment(self.save_pos, Qt.AlignmentFlag.AlignBottom)
+        right_layout.setAlignment(self.submit, Qt.AlignmentFlag.AlignBottom)
 
         # layout général
         upper_layout = QVBoxLayout()
@@ -794,14 +799,13 @@ class EditDialog(QDialog):
 
         layout.addLayout(left_layout)
         layout.addLayout(label_layout)
+        layout.addLayout(right_layout)
         upper_layout.addLayout(layout)
         self.setLayout(upper_layout)
 
         self.refresh()
 
     def set_color(self):
-        # retourne le ext_fen pour que le joueur ayant le trait soit en bas
-        # il sera remis à l'endroit avant d'être envoyé au formulaire
         self.color = self.sender().id
         if self.color != self.prev_color:
             self.ext_fen = flip_fen(self.ext_fen)
@@ -834,7 +838,7 @@ class EditDialog(QDialog):
             self.ext_fen = '0000000000000000000000000000000000000000000000000000000000000000'
             self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
         elif self.sender().id == 3:
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","PNG Files (*.png)")
             if fileName:
                 if not re.search('[.]png$', fileName):
                     fileName += '.png'
@@ -928,7 +932,6 @@ class EditDialog(QDialog):
         self.refresh()
         
     def releaseEvent(self, event):
-        # récupération de la case 
         self.position = event.pos()
         i = 1
         j = 1
@@ -1038,7 +1041,6 @@ class EditDialog(QDialog):
                     print('pas de fleche pour ce tracé')
 
     def refresh(self):
-        # crée l'overlay sur lequel vont être imprimées les pièces
         empty1_path = os.path.join(self.board_dir, 'empty1.png')
         self.pieces_img = Image.open(empty1_path)
         self.pieces_img = self.pieces_img.resize((600,600))
@@ -1088,7 +1090,6 @@ class EditDialog(QDialog):
         self.fen = repack_fen(self.ext_fen)
 
     def submit_click(self):
-        # rétablit le fen dans le bon sens s'il a été retourné dans l'éditeur
         if self.color == 'b':
             self.fen = flip_fen(self.fen)
             self.symbol_fen = flip_sym(self.symbol_fen)
@@ -1187,22 +1188,10 @@ class PropDialog(QDialog):
         self.color_state.setChecked(self.info["color_state"])
         diag_tab_layout.addWidget(self.color_state,1,0)
 
-        self.color_text_combo = QComboBox()
-        self.color_text_combo.addItems(["à gauche","à droite"])
-        self.color_text_combo.currentTextChanged.connect(self.set_color_text)
-        self.color_text_combo.setCurrentText(self.info["color_text"])
-        diag_tab_layout.addWidget(self.color_text_combo,1,1)
-
         self.numDiag_state = QCheckBox("Numéroter les diagrammes")
         self.numDiag_state.clicked.connect(self.set_numDiag_state)
         self.numDiag_state.setChecked(self.info["numDiag_state"])
         diag_tab_layout.addWidget(self.numDiag_state,2,0)
-
-        self.numDiag_text_combo = QComboBox()
-        self.numDiag_text_combo.addItems(["à gauche","à droite"])
-        self.numDiag_text_combo.currentTextChanged.connect(self.set_numDiag_text)
-        self.numDiag_text_combo.setCurrentText(self.info["numDiag_text"])
-        diag_tab_layout.addWidget(self.numDiag_text_combo,2,1)
 
         self.legend_state = QCheckBox("Afficher une légende sous les diagrammes")
         self.legend_state.clicked.connect(self.set_legend_state)
@@ -1233,6 +1222,17 @@ class PropDialog(QDialog):
         self.right_state.clicked.connect(self.set_right_state)
         self.right_state.setChecked(self.info["right_state"])
         diag_tab_layout.addWidget(self.right_state,8,0)
+
+        if not self.info["coord_state"]:
+            self.up_state.setEnabled(False)
+            self.down_state.setEnabled(False)
+            self.right_state.setEnabled(False)
+            self.left_state.setEnabled(False)
+        else:
+            self.up_state.setEnabled(True)
+            self.down_state.setEnabled(True)
+            self.right_state.setEnabled(True)
+            self.left_state.setEnabled(True)
 
         tab_widget.addTab(page_tab, "Page")
         tab_widget.addTab(diag_tab, "Diagrammes")
@@ -1315,14 +1315,6 @@ class PropDialog(QDialog):
         else:
             self.info["color_state"] = False
 
-    def set_color_text(self, text):
-        self.changedInfo = True
-        self.setWindowTitle("Paramètres*")
-        if text == "à gauche":
-            self.info["color_text"] = "à gauche"
-        else:
-            self.info["color_text"] = "à droite"
-
     def set_numDiag_state(self, state):
         self.changedInfo = True
         self.setWindowTitle("Paramètres*")
@@ -1330,14 +1322,6 @@ class PropDialog(QDialog):
             self.info["numDiag_state"] = True
         else:
             self.info["numDiag_state"] = False
-
-    def set_numDiag_text(self, text):
-        self.changedInfo = True
-        self.setWindowTitle("Paramètres*")
-        if text == "à gauche":
-            self.info["numDiag_text"] = "à gauche"
-        else:
-            self.info["numDiag_text"] = "à droite"
 
     def set_legend_state(self, state):
         self.changedInfo = True
@@ -1416,12 +1400,8 @@ class PropDialog(QDialog):
             file.write(str(self.info["flip_state"]) + "|")
             file.write("color_state,")
             file.write(str(self.info["color_state"]) + "|")
-            file.write("color_text,")
-            file.write(str(self.info["color_text"]) + "|")
             file.write("numDiag_state,")
             file.write(str(self.info["numDiag_state"]) + "|")
-            file.write("numDiag_text,")
-            file.write(str(self.info["numDiag_text"]) + "|")
             file.write("legend_state,")
             file.write(str(self.info["legend_state"]) + "|")
             file.write("coord_state,")
@@ -1436,8 +1416,22 @@ class PropDialog(QDialog):
             file.write(str(self.info["right_state"]))
 
     def new_exit(self):
-        for diag_info in self.info.items():
-            self.parent().info[diag_info[0]] = diag_info[1]
+
+        self.parent().info["title_state"] = self.info["title_state"]
+        self.parent().info["numPage_state"] = self.info["numPage_state"]
+        self.parent().info["format_text"] = self.info["format_text"]
+        self.parent().info["diags_value"] = self.info["diags_value"]
+        self.parent().info["cols_value"] = self.info["cols_value"]
+        self.parent().info["margin_value"] = self.info["margin_value"]
+        self.parent().info["flip_state"] = self.info["flip_state"]
+        self.parent().info["color_state"] = self.info["color_state"]
+        self.parent().info["numDiag_state"] = self.info["numDiag_state"]
+        self.parent().info["legend_state"] = self.info["legend_state"]
+        self.parent().info["coord_state"] = self.info["coord_state"]
+        self.parent().info["up_state"] = self.info["up_state"]
+        self.parent().info["down_state"] = self.info["down_state"]
+        self.parent().info["left_state"] = self.info["left_state"]
+        self.parent().info["right_state"] = self.info["right_state"]
         self.done(1)
 
     def new_cancel(self):
@@ -1482,15 +1476,16 @@ class ViewDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setWindowTitle(os.path.basename(self.parent().currentFileName))
         temp_jpg = os.path.join("temp","temp.jpg")
         pixmap = QPixmap(temp_jpg)
         self.label = QLabel()
-        if self.parent().parent().info["format"] == "portrait":
+        if self.parent().info["format_text"] == "portrait":
             self.label.setFixedSize(473, 668)
-            self.setFixedSize(493, 733)
+#           self.setFixedSize(493, 733)
         else:
             self.label.setFixedSize(891, 630)
-            self.setFixedSize(911, 690)
+#           self.setFixedSize(911, 690)
         
         self.label.setPixmap(pixmap)
         self.label.setScaledContents(True)
@@ -1501,17 +1496,22 @@ class ViewDialog(QDialog):
         self.save_diags_push = QPushButton("Enregistrer les diagrammes")
         self.save_diags_push.id = "diags"
         self.save_diags_push.clicked.connect(self.push)
-        self.cancel_push = QPushButton("Annuler")
+        self.print_push = QPushButton("Imprimer la page")
+        self.print_push.id = "diags"
+        self.print_push.clicked.connect(self.push)
+        self.cancel_push = QPushButton("Fermer")
         self.cancel_push.id = "cancel"
         self.cancel_push.clicked.connect(self.push)
 
-        page_layout = QVBoxLayout()
+        page_layout = QHBoxLayout()
         page_layout.setStretchFactor(self.label, 3)
-        buttons_layout = QHBoxLayout()
+        buttons_layout = QVBoxLayout()
 
         buttons_layout.addWidget(self.save_page_push)
         buttons_layout.addWidget(self.save_diags_push)
+        buttons_layout.addWidget(self.print_push)
         buttons_layout.addWidget(self.cancel_push)
+        buttons_layout.setAlignment(self.cancel_push, Qt.AlignmentFlag.AlignBottom)
 
         page_layout.addWidget(self.label)
         page_layout.addLayout(buttons_layout)
@@ -1520,21 +1520,21 @@ class ViewDialog(QDialog):
 
     def push(self):
         if self.sender().id == "page":
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
             if fileName:
                 if not re.search('[.]png$', fileName):
                     fileName += '.png'
-                self.parent().parent().info["page"].save(fileName)
+                self.parent().info["page"].save(fileName)
 
         elif self.sender().id == "diags":
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
             if fileName:
                 if re.search('[.]png$', fileName):
                     fileName += 'png'
                 i = 0
-                for box in self.parent().parent().info["boxes"]:
-                    if self.parent().parent().info["index_state"]:
-                        box.save(fileName + str(self.parent().parent().info["index_value"] + i) + '.png')
+                for box in self.parent().info["boxes"]:
+                    if self.parent().info["index_state"]:
+                        box.save(fileName + str(self.parent().info["index_value"] + i) + '.png')
                     else:
                         box.save(fileName + str(i + 1) + '.png')
                     i += 1
