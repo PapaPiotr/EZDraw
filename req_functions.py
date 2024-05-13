@@ -1,4 +1,4 @@
-from old_play_fonction import assessPosition, drawBoard, getMove, getFen, updateInfos
+from play_functions import assessPosition, drawBoard, getMove, getFen, updateInfos
 import requests
 import re
 
