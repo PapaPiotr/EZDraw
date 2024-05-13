@@ -645,18 +645,22 @@ def getPinMiddleSquares(pins):
                 piecesRange[i][2].append(numToSquare(start))
                 start -= 1
         else:
-            while isSameDiagonal(start, end) == 3 and start != end:
-                piecesRange[i][2].append(numToSquare(start))
-                start += 9
-            while isSameDiagonal(start, end) == 7 and start != end:
-                piecesRange[i][2].append(numToSquare(start))
-                start -= 9
-            while isSameDiagonal(start, end) == 9 and start != end:
-                piecesRange[i][2].append(numToSquare(start))
-                start -= 7
-            while isSameDiagonal(start, end) == 1 and start != end:
-                piecesRange[i][2].append(numToSquare(start))
-                start += 7
+            if isSameDiagonal(start, end) == 3:
+                while start < end:
+                    piecesRange[i][2].append(numToSquare(start))
+                    start += 9
+            if isSameDiagonal(start, end) == 7:
+                while start > end:
+                    piecesRange[i][2].append(numToSquare(start))
+                    start -= 9
+            if isSameDiagonal(start, end) == 9:
+                while start > end:
+                    piecesRange[i][2].append(numToSquare(start))
+                    start -= 7
+            elif isSameDiagonal(start, end) == 1:
+                while start < end:
+                    piecesRange[i][2].append(numToSquare(start))
+                    start += 7
         i += 1
     return(piecesRange)
 
