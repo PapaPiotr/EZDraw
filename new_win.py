@@ -8,6 +8,7 @@ from PyQt6.QtCore import QLine, QSize, Qt, QPoint, QSizeF
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from new_fonctions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
+from req_fonctions import getFenFromId
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -180,6 +181,7 @@ class MainWindow(QMainWindow):
         self.info["legends"] = list()
         self.info["symbols"] = list()
         self.info["arrows"] = list()
+        self.info["lichess"] = list()
 
         # variables manipulées par le programme
         self.info["active_editor"] = int()
@@ -288,9 +290,8 @@ class MainWindow(QMainWindow):
             self.load_widgets()
             self.adjustSize()
 
-
     def saveForm(self):
-        if self.newFileName != self.currentFileName or self.newFileName == "":
+        if self.newFileName != self.currentFileName or self.newFileName == "" or "Nouveau document" in self.currentFileName:
             self.saveAs()
         else:
             with open(self.currentFileName, "w") as file:
@@ -498,12 +499,18 @@ class MainWindow(QMainWindow):
     # Divers
     def preview(self):
         self.test = ""
-        i = 1
+        i = 0
+        for fen in self.info["fens"]:
+            if fen[0] == "#":
+                self.info["fens"][i] = getFenFromId(fen)
+                self.fens[i].setText(self.info["fens"][i])
+            i += 1
+        i = 0
         for fen in self.info["fens"]:
             self.test = test_fen(fen)
             if self.test != "OK":
                 self.test += " dans le fen n°"
-                self.test += str(i)
+                self.test += str(i-1)
 
                 alertDialog = ViewAlertDialog(self)
                 alertDialog.exec()
@@ -522,7 +529,7 @@ class MainWindow(QMainWindow):
         print("annuler")
 
     def redo(self):
-        print("retablir")
+        self.fenFromId = getFenFromId(self.info["fens"][0])
         
     def openHelp(self):
         print("help")
@@ -568,6 +575,10 @@ class MainWindow(QMainWindow):
 
     def openEdit(self):
         self.info["active_editor"] = self.sender().id
+        if self.info["fens"][self.info["active_editor"]][0] == "#":
+
+            self.info["fens"][self.info["active_editor"]] = getFenFromId(self.info["fens"][self.info["active_editor"]])
+
         test = test_fen(self.info["fens"][self.info["active_editor"]])
         if test != "OK":
             self.info["fens"][self.info["active_editor"]] ="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w" 
