@@ -7,8 +7,8 @@ from PyQt6.QtGui import QAction, QGradient, QIcon, QImage, QKeySequence, QPageSi
 from PyQt6.QtCore import QLine, QSize, Qt, QPoint, QSizeF
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
-from new_fonctions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
-from req_fonctions import getFenFromId
+from image_functions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
+from req_functions import getFenFromId
 
 class MainWindow(QMainWindow):
     def __init__(self):
