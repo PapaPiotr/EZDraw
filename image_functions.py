@@ -129,7 +129,7 @@ def submit(self, info):
 
 # draws the page
     page = draw_page(orient, t_state, title, n_state, num, col, margin, boxes)
-    temp_jpg = os.path.join("temp","temp.jpg")
+    temp_jpg = "temp.jpg"
     page.save(temp_jpg)
     self.info["page"] = page
 

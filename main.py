@@ -63,17 +63,17 @@ class MainWindow(QMainWindow):
         self.act_Open.setShortcut(QKeySequence("Ctrl+o"))
         self.act_Open.triggered.connect(self.openDoc)
 
-        self.act_Undo = QAction(QIcon.fromTheme("edit-undo"), "Annuler", self)
-        self.act_Undo.setStatusTip("Annuler")
-        self.act_Undo.setShortcut(QKeySequence("Ctrl+z"))
-        self.act_Undo.triggered.connect(self.undo)
+        self.act_Save_diags = QAction(QIcon.fromTheme("folder-pictures"), "&Enregistrer les diagrammes", self)
+        self.act_Save_diags.setStatusTip("Enregistrer une image par diagramme")
+        self.act_Save_diags.setShortcut(QKeySequence("Ctrl+Shift+i"))
+        self.act_Save_diags.triggered.connect(self.saveDiags)
 
-        self.act_Redo = QAction(QIcon.fromTheme("edit-redo"), "Rétablir", self)
-        self.act_Redo.setStatusTip("Rétablir")
-        self.act_Redo.setShortcut(QKeySequence("Ctrl+y"))
-        self.act_Redo.triggered.connect(self.redo)
+        self.act_Save_img = QAction(QIcon.fromTheme("image"), "&Page", self)
+        self.act_Save_img.setStatusTip("Enregistrer l'image de la page")
+        self.act_Save_img.setShortcut(QKeySequence("Ctrl+i"))
+        self.act_Save_img.triggered.connect(self.saveImg)
 
-        self.act_Img = QAction(QIcon.fromTheme("media-playback-start"), "&Aperçu de la page de diagrammes", self)
+        self.act_Img = QAction(QIcon.fromTheme("view-preview"), "&Aperçu de la page de diagrammes", self)
         self.act_Img.setStatusTip("Aperçu de la page de diagrammes")
         self.act_Img.setShortcut(QKeySequence("Ctrl+Shift+o"))
         self.act_Img.triggered.connect(self.preview)
@@ -108,12 +108,11 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.act_Save_as)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Img)
+        self.toolbar.addAction(self.act_Save_img)
+        self.toolbar.addAction(self.act_Save_diags)
         self.toolbar.addAction(self.act_Print)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Settings)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.act_Undo)
-        self.toolbar.addAction(self.act_Redo)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Help)
         self.toolbar.addAction(self.act_About)
@@ -129,15 +128,14 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.act_Save_as)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Img)
+        self.fileMenu.addAction(self.act_Save_img)
+        self.fileMenu.addAction(self.act_Save_diags)
         self.fileMenu.addAction(self.act_Print)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Settings)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Exit)
 
-        self.fileEdit = self.menu.addMenu("&Édition")
-        self.fileEdit.addAction(self.act_Undo)
-        self.fileEdit.addAction(self.act_Redo)
 
         self.fileHelp = self.menu.addMenu("&Aide")
         self.fileHelp.addAction(self.act_Help)
@@ -525,11 +523,62 @@ class MainWindow(QMainWindow):
     def print(self):
         print("imprimer")
 
-    def undo(self):
-        print("annuler")
+    def saveDiags(self):
+        self.test = ""
+        i = 0
+        for fen in self.info["fens"]:
+            if fen[0] == "#":
+                self.info["fens"][i] = getFenFromId(fen)
+                self.fens[i].setText(self.info["fens"][i])
+            i += 1
+        i = 0
+        for fen in self.info["fens"]:
+            self.test = test_fen(fen)
+            if self.test != "OK":
+                self.test += " dans le fen n°"
+                self.test += str(i-1)
 
-    def redo(self):
-        self.fenFromId = getFenFromId(self.info["fens"][0])
+                return(0)
+            i += 1
+
+        submit(self, self.info)
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+        if fileName:
+            if re.search('[.]png$', fileName):
+                fileName += 'png'
+            i = 0
+            for box in self.info["boxes"]:
+                if self.info["numDiag_state"]:
+                    box.save(fileName + str(self.info["numDiag_value"] + i) + '.png')
+                else:
+                    box.save(fileName + str(i + 1) + '.png')
+                i += 1
+
+    def saveImg(self):
+        self.test = ""
+        i = 0
+        for fen in self.info["fens"]:
+            if fen[0] == "#":
+                self.info["fens"][i] = getFenFromId(fen)
+                self.fens[i].setText(self.info["fens"][i])
+            i += 1
+        i = 0
+        for fen in self.info["fens"]:
+            self.test = test_fen(fen)
+            if self.test != "OK":
+                self.test += " dans le fen n°"
+                self.test += str(i-1)
+
+                return(0)
+            i += 1
+
+        submit(self, self.info)
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+        if fileName:
+            if not re.search('[.]png$', fileName):
+                fileName += '.png'
+            self.info["page"].save(fileName)
+
         
     def openHelp(self):
         print("help")
@@ -1097,7 +1146,7 @@ class EditDialog(QDialog):
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
         self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
         self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
-        temp_board_path = os.path.join(self.current_dir,"temp","temp_board.jpg")
+        temp_board_path = os.path.join(self.current_dir,"temp_board.jpg")
         self.board_img.save(temp_board_path)
         # raffraichit le pixmap à afficher dans le label
         new_pixmap = QPixmap(temp_board_path)
@@ -1494,7 +1543,7 @@ class ViewDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(os.path.basename(self.parent().currentFileName))
-        temp_jpg = os.path.join("temp","temp.jpg")
+        temp_jpg = "temp.jpg"
         pixmap = QPixmap(temp_jpg)
         self.label = QLabel()
         if self.parent().info["format_text"] == "portrait":
