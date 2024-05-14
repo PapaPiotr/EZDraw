@@ -1,2 +1,3 @@
-Pillow
-PyQt6
+Pillow == 10.3.0
+PyQt6 == 6.4.2
+requests == 2.31.0
