@@ -867,7 +867,7 @@ class EditDialog(QDialog):
         combo.addItems(["Pièces", "Formes", "Flèches"])
         combo.currentTextChanged.connect(self.text_changed)
 
-        # choix du trait (renversement du plateau)
+        # choix du trait
         self.radio_white = QRadioButton("Trait aux blancs")
         self.radio_white.id = 'w'
         self.radio_white.clicked.connect(self.set_color)
@@ -879,6 +879,10 @@ class EditDialog(QDialog):
         if self.color == 'b':
             self.radio_black.setChecked(True)
         self.prev_color = self.color
+
+        # renversement du plateau
+        self.check_flip = QCheckBox("Retourner le plateau")
+        self.check_flip.clicked.connect(self.flip_board)
         
         self.start_pos = QPushButton("Position de départ")
         self.start_pos.clicked.connect(self.pos_click)
@@ -977,6 +981,7 @@ class EditDialog(QDialog):
         left_layout = QVBoxLayout()
         left_layout.addWidget(combo)
         left_layout.addLayout(self.stack_layout)
+        left_layout.addWidget(self.check_flip)
         left_layout.addWidget(self.radio_white)
         left_layout.addWidget(self.radio_black)
         right_layout = QVBoxLayout()
@@ -1017,6 +1022,12 @@ class EditDialog(QDialog):
         self.color = self.sender().id
         if self.color != self.prev_color:
             self.prev_color = self.color
+
+    def flip_board(self):
+        self.ext_fen = flip_fen(self.ext_fen)
+        self.symbol_fen = flip_sym(self.symbol_fen)
+        self.printed_arrows = flip_arrows(self.printed_arrows)
+        self.refresh()
 
     def text_changed(self, s):
         if s == "Formes":
@@ -1296,6 +1307,10 @@ class EditDialog(QDialog):
         self.fen = repack_fen(self.ext_fen)
 
     def submit_click(self):
+        if self.check_flip.isChecked():
+            self.fen = flip_fen(self.fen)
+            self.symbol_fen = flip_sym(self.symbol_fen)
+            self.printed_arrows = flip_arrows(self.printed_arrows)
         self.fen += (' ' + self.color)
         self.parent().info["fens"][self.parent().info["active_editor"]]=self.fen
         self.parent().info["symbols"][self.parent().info["active_editor"]]=self.symbol_fen
