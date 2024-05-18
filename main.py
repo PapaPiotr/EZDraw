@@ -3,12 +3,12 @@ import sys
 import re
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
-from PyQt6.QtGui import QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPixmap, QMouseEvent, QCursor
+from PyQt6.QtGui import QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
 from PyQt6.QtCore import QLine, QSize, Qt, QPoint, QSizeF
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QScrollArea, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from image_functions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
-from req_functions import getFenFromId
+from req_functions import getFenFromId, openPgnFile
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -340,7 +340,7 @@ class MainWindow(QMainWindow):
             self.changedFile = False
 
     def saveAs(self):
-        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","save","")
+        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","")
         if os.path.basename(self.newFileName) != "":
             self.currentFileName = self.newFileName
             self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
@@ -435,7 +435,7 @@ class MainWindow(QMainWindow):
                 self.saveForm()
             elif result == 3:
                 return(0)
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","save","")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","")
         if os.path.basename(fileName) == "":
             return(0)
         else:
@@ -521,6 +521,8 @@ class MainWindow(QMainWindow):
         view.exec()
 
     def print(self):
+        pgn_diag = PGNDialog(self)
+        pgn_diag.exec()
         print("imprimer")
 
     def saveDiags(self):
@@ -642,6 +644,146 @@ class MainWindow(QMainWindow):
             for fen, text in zip(self.fens, self.info["fens"]):
                 fen.setText(text)
 
+class PGNDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","")
+        self.setWindowTitle(os.path.basename(fileName))
+        self.palette = app.palette()
+        self.active_move = 0
+        self.player = "w"
+
+        self.pgn_data = openPgnFile(fileName)
+        self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move], False)
+        self.board = draw_board(self.ext_fen,self.pgn_data["symbols"][self.active_move],self.pgn_data["arrows"][self.active_move])
+        self.board.save("temp_board.jpg")
+        pixmap = QPixmap("temp_board.jpg")
+
+        self.label = QLabel()
+        self.label.setFixedSize(600,600)
+        self.label.setPixmap(pixmap)
+        self.label.setScaledContents(True)
+        self.label.setMouseTracking(True)
+
+
+        self.movesLayout = QGridLayout()
+        if len(self.pgn_data["piecesMoves"])%2 != 0:
+            self.pgn_data["piecesMoves"].append("")
+
+        self.moveLabels = list()
+        for move in self.pgn_data["piecesMoves"]:
+            self.moveLabels.append(QLabel(move))
+        self.moveLabels[self.active_move].setStyleSheet(f"""
+            QLabel {{
+                background-color: {self.palette.color(QPalette.ColorRole.WindowText).name()};
+                color: {self.palette.color(QPalette.ColorRole.Window).name()};
+            }}
+        """)
+        i = 0
+        j = 1
+        while i < len(self.pgn_data["piecesMoves"]):
+            self.movesLayout.addWidget(QLabel(str(j)),j-1,0)
+            self.movesLayout.addWidget(self.moveLabels[i],j-1,1)
+            self.movesLayout.addWidget(self.moveLabels[i+1],j-1,2)
+            j += 1
+            i += 2
+
+        self.contentWidget = QWidget()
+        self.contentWidget.setLayout(self.movesLayout)
+        self.scollArea = QScrollArea()
+        self.scollArea.setWidget(self.contentWidget)
+
+        self.startButton = QPushButton("<<")
+        self.startButton.clicked.connect(self.start)
+        self.prevButton = QPushButton("<")
+        self.prevButton.clicked.connect(self.prev)
+        self.nextButton = QPushButton(">")
+        self.nextButton.clicked.connect(self.next)
+        self.endButton = QPushButton(">>")
+        self.endButton.clicked.connect(self.end)
+
+        self.activeFenLabel = QLabel("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.activeFenLabel.setFixedWidth(600)
+        self.importFenButton = QPushButton("importer comme diagramme n°")
+        self.importFenButton.clicked.connect(self.importFen)
+        self.targetDiag = QSpinBox()
+        self.targetDiag.setRange(1,self.parent().info["diags_value"])
+        self.fenLayout = QHBoxLayout()
+        self.fenLayout.addWidget(self.activeFenLabel)
+        self.fenLayout.addWidget(self.importFenButton)
+        self.fenLayout.addWidget(self.targetDiag)
+
+        self.buttons_layout = QGridLayout()
+        self.buttons_layout.addWidget(self.startButton,0,0)
+        self.buttons_layout.addWidget(self.prevButton,1,0)
+        self.buttons_layout.addWidget(self.nextButton,1,1)
+        self.buttons_layout.addWidget(self.endButton,0,1)
+
+        self.rightLayout = QVBoxLayout()
+        self.rightLayout.addWidget(self.scollArea)
+        self.rightLayout.addLayout(self.buttons_layout)
+
+        self.imageLayout = QHBoxLayout()
+        self.imageLayout.addWidget(self.label)
+        self.imageLayout.addLayout(self.rightLayout)
+
+        self.mainLayout = QVBoxLayout()
+        self.mainLayout.addLayout(self.imageLayout)
+        self.mainLayout.addLayout(self.fenLayout)
+        self.setLayout(self.mainLayout)
+
+    def start(self):
+        self.active_move = 0
+        self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.refresh()
+
+    def prev(self):
+        if self.active_move > 0:
+            self.active_move -= 1
+        self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.refresh()
+
+    def next(self):
+        if self.active_move < len(self.pgn_data["fens"])-1:
+            self.active_move += 1
+        self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.refresh()
+
+    def end(self):
+        self.active_move = len(self.pgn_data["fens"])-1
+        self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.refresh()
+
+    def importFen(self):
+        self.parent().info["fens"][self.targetDiag.value()-1]=self.pgn_data["fens"][self.active_move]
+        self.parent().fens[self.targetDiag.value()-1].setText(self.pgn_data["fens"][self.active_move])
+        if self.targetDiag.value() < self.parent().info["diags_value"]:
+            self.targetDiag.setValue(self.targetDiag.value()+1)
+
+    def refresh(self):
+        self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move],False)
+        self.board = draw_board(self.ext_fen,self.pgn_data["symbols"][self.active_move],self.pgn_data["arrows"][self.active_move])
+        self.board.save("temp_board.jpg")
+        pixmap = QPixmap("temp_board.jpg")
+        self.label.setPixmap(pixmap)
+
+        for label in self.moveLabels:
+            label.setStyleSheet(f"""
+                QLabel {{
+                    color: {self.palette.color(QPalette.ColorRole.WindowText).name()};
+                    background-color: {self.palette.color(QPalette.ColorRole.Window).name()};
+                }}
+            """)
+
+        self.moveLabels[self.active_move].setStyleSheet(f"""
+            QLabel {{
+                background-color: {self.palette.color(QPalette.ColorRole.WindowText).name()};
+                color: {self.palette.color(QPalette.ColorRole.Window).name()};
+            }}
+        """)
+
 class EditDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -650,19 +792,6 @@ class EditDialog(QDialog):
 
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.arrows_dir = os.path.join(self.current_dir, "arrows")
-        def create_button(k,v):
-            button = QPushButton()
-            button.setFixedSize(75,75)
-            button.setIconSize(QSize(60,60))
-            button.id = k
-            button.path = v
-            button.setIcon(QIcon(v))
-            button.setCheckable(True)
-            button.clicked.connect(self.pieces_click)
-            button.image = Image.open(v)
-            button.image = button.image.resize((75,75))
-            return(button)
-
         # identification du fen a éditer
         self.diag_id = self.parent().info["active_editor"]
 
@@ -672,7 +801,8 @@ class EditDialog(QDialog):
         # (symbol_fen : pour les symboles)
         self.fen = self.parent().info["fens"][self.diag_id]
         self.color = self.fen.split()[1]
-        self.ext_fen = unpack_fen(self.fen, self.parent().info["flip_state"])
+        self.ext_fen = unpack_fen(self.fen,False)
+        print(self.ext_fen)
         self.symbol_fen = self.parent().info["symbols"][self.diag_id]
         self.printed_arrows = self.parent().info["arrows"][self.diag_id]
         if self.parent().info["flip_state"] and self.color == 'b':
@@ -779,7 +909,7 @@ class EditDialog(QDialog):
         
         # création des boutons
         for k,v in self.infos.items():
-            self.buttons.append(create_button(k,v))
+            self.buttons.append(self.create_button(k,v))
         for button in self.buttons:
             button.setChecked(False)
 
@@ -870,13 +1000,22 @@ class EditDialog(QDialog):
 
         self.refresh()
 
+    def create_button(self,k,v):
+        button = QPushButton()
+        button.setFixedSize(75,75)
+        button.setIconSize(QSize(60,60))
+        button.id = k
+        button.path = v
+        button.setIcon(QIcon(v))
+        button.setCheckable(True)
+        button.clicked.connect(self.pieces_click)
+        button.image = Image.open(v)
+        button.image = button.image.resize((75,75))
+        return(button)
+
     def set_color(self):
         self.color = self.sender().id
         if self.color != self.prev_color:
-            self.ext_fen = flip_fen(self.ext_fen)
-            self.symbol_fen = flip_sym(self.symbol_fen)
-            self.printed_arrows = flip_arrows(self.printed_arrows)
-            self.refresh()
             self.prev_color = self.color
 
     def text_changed(self, s):
@@ -895,7 +1034,9 @@ class EditDialog(QDialog):
             self.ext_fen = 'rnbqkbnrpppppppp00000000000000000000000000000000PPPPPPPPRNBQKBNR'
             self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
             if self.color == 'b':
-                self.ext_fen = flip_fen(self.ext_fen)
+#               self.ext_fen = flip_fen(self.ext_fen)
+                self.color = "w"
+                self.radio_white.setChecked(True)
         elif self.sender().id == 2:
             self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
             self.printed_arrows = []
@@ -1155,10 +1296,6 @@ class EditDialog(QDialog):
         self.fen = repack_fen(self.ext_fen)
 
     def submit_click(self):
-        if self.color == 'b':
-            self.fen = flip_fen(self.fen)
-            self.symbol_fen = flip_sym(self.symbol_fen)
-            self.printed_arrows = flip_arrows(self.printed_arrows)
         self.fen += (' ' + self.color)
         self.parent().info["fens"][self.parent().info["active_editor"]]=self.fen
         self.parent().info["symbols"][self.parent().info["active_editor"]]=self.symbol_fen
