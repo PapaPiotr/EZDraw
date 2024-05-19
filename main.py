@@ -345,7 +345,9 @@ class MainWindow(QMainWindow):
             self.changedFile = False
 
     def saveAs(self):
-        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","")
+        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","TXT Files (*.txt)")
+        if not re.search('\\.txt$', self.newFileName):
+            self.newFileName += '.txt'
         if os.path.basename(self.newFileName) != "":
             self.currentFileName = self.newFileName
             self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
@@ -439,7 +441,7 @@ class MainWindow(QMainWindow):
                 self.saveForm()
             elif result == 3:
                 return(0)
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","TXT Files (*.txt)")
         if os.path.basename(fileName) == "":
             return(0)
         else:
@@ -548,7 +550,7 @@ class MainWindow(QMainWindow):
             i += 1
 
         submit(self, self.info)
-        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
         if fileName:
             if re.search('\\.png$', fileName):
                 noExtName = ""
@@ -585,9 +587,9 @@ class MainWindow(QMainWindow):
             i += 1
 
         submit(self, self.info)
-        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
         if fileName:
-            if not re.search('[.]png$', fileName):
+            if not re.search('\\.png$', fileName):
                 fileName += '.png'
             self.info["page"].save(fileName)
 
@@ -1072,9 +1074,9 @@ class EditDialog(QDialog):
             self.ext_fen = '0000000000000000000000000000000000000000000000000000000000000000'
             self.symbol_fen = '0000000000000000000000000000000000000000000000000000000000000000'
         elif self.sender().id == 3:
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
             if fileName:
-                if not re.search('[.]png$', fileName):
+                if not re.search('\\.png$', fileName):
                     fileName += '.png'
                 self.board_img.save(fileName)
 
@@ -1755,16 +1757,16 @@ class ViewDialog(QDialog):
 
     def push(self):
         if self.sender().id == "page":
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
             if fileName:
-                if not re.search('[.]png$', fileName):
+                if not re.search('\\.png$', fileName):
                     fileName += '.png'
                 self.parent().info["page"].save(fileName)
 
         elif self.sender().id == "diags":
-            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+            fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","PNG Files (*.png)")
             if fileName:
-                if re.search('[.]png$', fileName):
+                if not re.search('\\.png$', fileName):
                     fileName += 'png'
                 i = 0
                 for box in self.parent().info["boxes"]:
