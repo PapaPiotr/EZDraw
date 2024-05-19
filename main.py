@@ -550,8 +550,14 @@ class MainWindow(QMainWindow):
         submit(self, self.info)
         fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
         if fileName:
-#           if re.search('[.]png$', fileName):
-#               fileName += 'png'
+            if re.search('\.png$', fileName):
+                noExtName = ""
+                i = 0
+                for c in fileName:
+                    if i < len(fileName)-4:
+                        noExtName += c
+                        i += 1
+                fileName = noExtName
             i = 0
             for box in self.info["boxes"]:
                 if self.info["numDiag_state"]:
