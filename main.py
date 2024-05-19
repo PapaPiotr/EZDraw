@@ -354,12 +354,10 @@ class MainWindow(QMainWindow):
                 file.write(str(self.info["title_state"]) + "|")
                 file.write("numDiag_state,")
                 file.write(str(self.info["numDiag_state"]) + "|")
-                file.write("numDiag_text,")
-                file.write(str(self.info["numDiag_text"]) + "|")
+                file.write("numDiag_value,")
+                file.write(str(self.info["numDiag_value"]) + "|")
                 file.write("color_state,")
                 file.write(str(self.info["color_state"]) + "|")
-                file.write("color_text,")
-                file.write(str(self.info["color_text"]) + "|")
                 file.write("format_text,")
                 file.write(self.info["format_text"] + "|")
                 file.write("flip_state,")
@@ -410,6 +408,7 @@ class MainWindow(QMainWindow):
             self.newFileName = self.currentFileName
 
     def newDoc(self):
+        print(self.changedFile)
         if self.changedFile:
             dialog = SaveBeforeDialog()
             dialog.exec()
@@ -549,10 +548,10 @@ class MainWindow(QMainWindow):
             i += 1
 
         submit(self, self.info)
-        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
         if fileName:
-            if re.search('[.]png$', fileName):
-                fileName += 'png'
+#           if re.search('[.]png$', fileName):
+#               fileName += 'png'
             i = 0
             for box in self.info["boxes"]:
                 if self.info["numDiag_state"]:
@@ -580,7 +579,7 @@ class MainWindow(QMainWindow):
             i += 1
 
         submit(self, self.info)
-        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","images","All Files (*);;PNG Files (*.png)")
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
         if fileName:
             if not re.search('[.]png$', fileName):
                 fileName += '.png'
@@ -654,7 +653,7 @@ class PGNDialog(QDialog):
         super().__init__(parent)
 
 
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","PGN Files (*.pgn)")
         self.setWindowTitle(os.path.basename(fileName))
         self.palette = app.palette()
         self.active_move = 0
