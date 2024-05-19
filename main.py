@@ -78,10 +78,15 @@ class MainWindow(QMainWindow):
         self.act_Img.setShortcut(QKeySequence("Ctrl+Shift+o"))
         self.act_Img.triggered.connect(self.preview)
 
-        self.act_Print = QAction(QIcon.fromTheme("document-print"), "Imprimer", self)
-        self.act_Print.setStatusTip("Imprimer")
-        self.act_Print.setShortcut(QKeySequence("Ctrl+p"))
-        self.act_Print.triggered.connect(self.print)
+        self.act_PGN = QAction(QIcon.fromTheme("text-plain"), "PGN", self)
+        self.act_PGN.setStatusTip("Ouvrir un fichier pgn")
+        self.act_PGN.setShortcut(QKeySequence("Ctrl+t"))
+        self.act_PGN.triggered.connect(self.openPgn)
+
+#       self.act_PGN = QAction(QIcon.fromTheme("document-print"), "Imprimer", self)
+#       self.act_PGN.setStatusTip("Imprimer")
+#       self.act_PGN.setShortcut(QKeySequence("Ctrl+p"))
+#       self.act_PGN.triggered.connect(self.print)
 
         self.act_Help = QAction(QIcon.fromTheme("help-contents"), "Aide", self)
         self.act_Help.setStatusTip("Aide")
@@ -104,13 +109,13 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.act_New)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Open)
+        self.toolbar.addAction(self.act_PGN)
         self.toolbar.addAction(self.act_Save)
         self.toolbar.addAction(self.act_Save_as)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Img)
         self.toolbar.addAction(self.act_Save_img)
         self.toolbar.addAction(self.act_Save_diags)
-        self.toolbar.addAction(self.act_Print)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Settings)
         self.toolbar.addSeparator()
@@ -124,13 +129,13 @@ class MainWindow(QMainWindow):
         self.fileMenu.addAction(self.act_New)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Open)
+        self.fileMenu.addAction(self.act_PGN)
         self.fileMenu.addAction(self.act_Save)
         self.fileMenu.addAction(self.act_Save_as)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Img)
         self.fileMenu.addAction(self.act_Save_img)
         self.fileMenu.addAction(self.act_Save_diags)
-        self.fileMenu.addAction(self.act_Print)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Settings)
         self.fileMenu.addSeparator()
@@ -520,7 +525,7 @@ class MainWindow(QMainWindow):
         view = ViewDialog(self)
         view.exec()
 
-    def print(self):
+    def openPgn(self):
         pgn_diag = PGNDialog(self)
         pgn_diag.exec()
         print("imprimer")
@@ -667,6 +672,13 @@ class PGNDialog(QDialog):
         self.label.setScaledContents(True)
         self.label.setMouseTracking(True)
 
+        self.headerLabel = list()
+        for header in self.pgn_data["headers"]:
+            self.headerLabel.append(QLabel(header))
+
+        self.headerLayout = QVBoxLayout()
+        for header in self.headerLabel:
+            self.headerLayout.addWidget(header)
 
         self.movesLayout = QGridLayout()
         if len(self.pgn_data["piecesMoves"])%2 != 0:
@@ -726,6 +738,7 @@ class PGNDialog(QDialog):
         self.rightLayout.addLayout(self.buttons_layout)
 
         self.imageLayout = QHBoxLayout()
+        self.imageLayout.addLayout(self.headerLayout)
         self.imageLayout.addWidget(self.label)
         self.imageLayout.addLayout(self.rightLayout)
 
@@ -802,7 +815,6 @@ class EditDialog(QDialog):
         self.fen = self.parent().info["fens"][self.diag_id]
         self.color = self.fen.split()[1]
         self.ext_fen = unpack_fen(self.fen,False)
-        print(self.ext_fen)
         self.symbol_fen = self.parent().info["symbols"][self.diag_id]
         self.printed_arrows = self.parent().info["arrows"][self.diag_id]
         if self.parent().info["flip_state"] and self.color == 'b':
