@@ -550,7 +550,7 @@ class MainWindow(QMainWindow):
         submit(self, self.info)
         fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;PNG Files (*.png)")
         if fileName:
-            if re.search('\.png$', fileName):
+            if re.search('\\.png$', fileName):
                 noExtName = ""
                 i = 0
                 for c in fileName:

@@ -58,7 +58,7 @@ def openPgnFile(fileName):
     with open(fileName, "r") as file:
         plainText = file.read()
 
-        pgn_data["headers"] = re.findall('\[\w.*\]', plainText)
+        pgn_data["headers"] = re.findall('\\[\\w.*\\]', plainText)
         purgedText = ""
         write = True
         for c in plainText:
@@ -73,7 +73,7 @@ def openPgnFile(fileName):
             if write and c not in "()[]{}":
                 purgedText += c
 
-        moves = re.findall('[a-hRNBQKO][a-hx1-8RNBQKO\-\+\=\#]{1,6}', purgedText)
+        moves = re.findall('[a-hRNBQKO][a-hx1-8RNBQKO\\-\\+\\=\\#]{1,6}', purgedText)
         if len(moves) % 2 != 0:
             moves.append("")
 
