@@ -235,10 +235,10 @@ class MainWindow(QMainWindow):
             self.layTitle.addWidget(self.title_text, 0, 1)
 
         # Section de formulaire
-        self.layForm.addWidget(QLabel("Saisir un FEN ou un identifiant de problème Lichess            "), 0, 1)
+        self.layForm.addWidget(QLabel("            Saisir un FEN ou un identifiant de problème Lichess            "), 0, 1)
 
         if self.info["legend_state"]:
-            self.layForm.addWidget(QLabel("Saisir une légende"), 0, 3)
+            self.layForm.addWidget(QLabel("       Saisir une légende       "), 0, 3)
 
         self.fens = list()
         self.legends = list()
@@ -259,7 +259,6 @@ class MainWindow(QMainWindow):
                 self.legends[i-1].textChanged.connect(self.change_legends)
                 self.layForm.addWidget(self.legends[i-1], i, 3)
 
-            self.layForm.addWidget(QPushButton("Charger un fichier"), i, 2)
             self.edits.append(QPushButton("Éditeur graphique"))
             self.edits[i-1].id = i-1
             self.edits[i-1].clicked.connect(self.openEdit)
@@ -345,9 +344,9 @@ class MainWindow(QMainWindow):
             self.changedFile = False
 
     def saveAs(self):
-        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","TXT Files (*.txt)")
-        if not re.search('\\.txt$', self.newFileName):
-            self.newFileName += '.txt'
+        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","CDG Files (*.cdg)")
+        if not re.search('\\.cdg$', self.newFileName):
+            self.newFileName += '.cdg'
         if os.path.basename(self.newFileName) != "":
             self.currentFileName = self.newFileName
             self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
@@ -410,7 +409,6 @@ class MainWindow(QMainWindow):
             self.newFileName = self.currentFileName
 
     def newDoc(self):
-        print(self.changedFile)
         if self.changedFile:
             dialog = SaveBeforeDialog()
             dialog.exec()
@@ -441,7 +439,7 @@ class MainWindow(QMainWindow):
                 self.saveForm()
             elif result == 3:
                 return(0)
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","TXT Files (*.txt)")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","CDG Files (*.cdg)")
         if os.path.basename(fileName) == "":
             return(0)
         else:
@@ -673,27 +671,46 @@ class PGNDialog(QDialog):
         self.board.save("temp_board.jpg")
         pixmap = QPixmap("temp_board.jpg")
 
-        self.label = QLabel()
-        self.label.setFixedSize(600,600)
-        self.label.setPixmap(pixmap)
-        self.label.setScaledContents(True)
-        self.label.setMouseTracking(True)
-
+        self.headerLayout = QGridLayout()
         self.headerLabel = list()
+        self.headerPush = list()
+        i = 0
         for header in self.pgn_data["headers"]:
             self.headerLabel.append(QLabel(header))
+            self.headerPush.append(QPushButton("+"))
+            self.headerPush[i].id = i
+            self.headerPush[i].clicked.connect(self.addToTitle)
+            i += 1
+        i = 0
+        for header,push in zip(self.headerLabel, self.headerPush):
+            self.headerLayout.addWidget(header, i, 0)
+            if self.parent().info["title_state"]:
+                self.headerLayout.addWidget(push, i, 1)
+            i += 1
+        self.autoLegend = QCheckBox("Légende automatique (ex: 'Fig.1 : 1.e4')")
 
-        self.headerLayout = QVBoxLayout()
-        for header in self.headerLabel:
-            self.headerLayout.addWidget(header)
+        self.titleEdit = QLineEdit(self.parent().info["title_text"])
 
-        self.movesLayout = QGridLayout()
+        self.boardLabel = QLabel()
+        self.boardLabel.setFixedSize(600,600)
+        self.boardLabel.setPixmap(pixmap)
+        self.boardLabel.setScaledContents(True)
+        self.boardLabel.setMouseTracking(True)
+
+        self.boardLayout = QVBoxLayout()
+        self.boardLayout.addWidget(self.boardLabel)
+
+        self.activeFenLabel = QLabel("FEN : " +self.pgn_data["fens"][self.active_move])
+
+        # rajoute un coup vide si la partie se termine sur un coup blanc
         if len(self.pgn_data["piecesMoves"])%2 != 0:
             self.pgn_data["piecesMoves"].append("")
 
         self.moveLabels = list()
+        # crée les labels affichant les coups
         for move in self.pgn_data["piecesMoves"]:
             self.moveLabels.append(QLabel(move))
+        # met le coup actif en surbrillance
         self.moveLabels[self.active_move].setStyleSheet(f"""
             QLabel {{
                 background-color: {self.palette.color(QPalette.ColorRole.WindowText).name()};
@@ -702,6 +719,9 @@ class PGNDialog(QDialog):
         """)
         i = 0
         j = 1
+
+        # dispose les labels de coups
+        self.movesLayout = QGridLayout()
         while i < len(self.pgn_data["piecesMoves"]):
             self.movesLayout.addWidget(QLabel(str(j)),j-1,0)
             self.movesLayout.addWidget(self.moveLabels[i],j-1,1)
@@ -711,8 +731,8 @@ class PGNDialog(QDialog):
 
         self.contentWidget = QWidget()
         self.contentWidget.setLayout(self.movesLayout)
-        self.scollArea = QScrollArea()
-        self.scollArea.setWidget(self.contentWidget)
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidget(self.contentWidget)
 
         self.startButton = QPushButton("<<")
         self.startButton.clicked.connect(self.start)
@@ -723,35 +743,39 @@ class PGNDialog(QDialog):
         self.endButton = QPushButton(">>")
         self.endButton.clicked.connect(self.end)
 
-        self.activeFenLabel = QLabel("FEN : " +self.pgn_data["fens"][self.active_move])
-        self.activeFenLabel.setFixedWidth(600)
+        self.buttonsLayout = QGridLayout()
+        self.buttonsLayout.addWidget(self.startButton,0,0)
+        self.buttonsLayout.addWidget(self.prevButton,1,0)
+        self.buttonsLayout.addWidget(self.nextButton,1,1)
+        self.buttonsLayout.addWidget(self.endButton,0,1)
+
         self.importFenButton = QPushButton("importer comme diagramme n°")
         self.importFenButton.clicked.connect(self.importFen)
         self.targetDiag = QSpinBox()
         self.targetDiag.setRange(1,self.parent().info["diags_value"])
-        self.fenLayout = QHBoxLayout()
-        self.fenLayout.addWidget(self.activeFenLabel)
-        self.fenLayout.addWidget(self.importFenButton)
-        self.fenLayout.addWidget(self.targetDiag)
 
-        self.buttons_layout = QGridLayout()
-        self.buttons_layout.addWidget(self.startButton,0,0)
-        self.buttons_layout.addWidget(self.prevButton,1,0)
-        self.buttons_layout.addWidget(self.nextButton,1,1)
-        self.buttons_layout.addWidget(self.endButton,0,1)
+        self.sideBoardLayout = QVBoxLayout()
+        self.sideBoardLayout.addWidget(self.scrollArea)
+        self.sideBoardLayout.addLayout(self.buttonsLayout)
+        
+        self.importLayout = QHBoxLayout()
+        self.importLayout.addWidget(self.importFenButton)
+        self.importLayout.addWidget(self.targetDiag)
 
-        self.rightLayout = QVBoxLayout()
-        self.rightLayout.addWidget(self.scollArea)
-        self.rightLayout.addLayout(self.buttons_layout)
+        self.mainLayout = QGridLayout()
+        if self.parent().info["title_state"]:
+            self.mainLayout.addWidget(QLabel("Ajouter l'information au titre de la page"),0,0)
+        self.mainLayout.addLayout(self.headerLayout,1,0)
+        if self.parent().info["legend_state"]:
+            self.mainLayout.addWidget(self.autoLegend,2,0)
+            self.autoLegend.setChecked(True)
+        if self.parent().info["title_state"]:
+            self.mainLayout.addWidget(self.titleEdit,0,1,1,2)
+        self.mainLayout.addLayout(self.boardLayout,1,1)
+        self.mainLayout.addLayout(self.sideBoardLayout,1,2)
+        self.mainLayout.addWidget(self.activeFenLabel,2,1)
+        self.mainLayout.addLayout(self.importLayout,2,2)
 
-        self.imageLayout = QHBoxLayout()
-        self.imageLayout.addLayout(self.headerLayout)
-        self.imageLayout.addWidget(self.label)
-        self.imageLayout.addLayout(self.rightLayout)
-
-        self.mainLayout = QVBoxLayout()
-        self.mainLayout.addLayout(self.imageLayout)
-        self.mainLayout.addLayout(self.fenLayout)
         self.setLayout(self.mainLayout)
 
     def start(self):
@@ -779,15 +803,43 @@ class PGNDialog(QDialog):
     def importFen(self):
         self.parent().info["fens"][self.targetDiag.value()-1]=self.pgn_data["fens"][self.active_move]
         self.parent().fens[self.targetDiag.value()-1].setText(self.pgn_data["fens"][self.active_move])
+        move = "Fig." + str(self.targetDiag.value()) + " : "
+        move += str(int((self.active_move+2)/2))
+        if (self.active_move+2)%2 == 0:
+            move += "."
+        else:
+            move += "..."
+        move += self.pgn_data["piecesMoves"][self.active_move]
+        
+        if self.parent().info["legend_state"] and self.autoLegend.isChecked():
+            self.parent().info["legends"][self.targetDiag.value()-1] = move
+            self.parent().legends[self.targetDiag.value()-1].setText(move)
+
         if self.targetDiag.value() < self.parent().info["diags_value"]:
             self.targetDiag.setValue(self.targetDiag.value()+1)
+
+    def addToTitle(self):
+        title = self.titleEdit.text()
+        quote = False
+        addedText = ""
+        for char in self.pgn_data["headers"][self.sender().id]:
+            if quote and char not in '",':
+                addedText += char
+            if char == '"':
+                if quote:
+                    quote = False
+                else:
+                    quote = True
+        title += addedText + " "
+        self.titleEdit.setText(title)
+        self.parent().title_text.setText(title)
 
     def refresh(self):
         self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move],False)
         self.board = draw_board(self.ext_fen,self.pgn_data["symbols"][self.active_move],self.pgn_data["arrows"][self.active_move])
         self.board.save("temp_board.jpg")
         pixmap = QPixmap("temp_board.jpg")
-        self.label.setPixmap(pixmap)
+        self.boardLabel.setPixmap(pixmap)
 
         for label in self.moveLabels:
             label.setStyleSheet(f"""
