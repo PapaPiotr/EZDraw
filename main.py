@@ -659,6 +659,7 @@ class PGNDialog(QDialog):
         super().__init__(parent)
 
 
+        self.parent().title_text.setText("")
         fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","PGN Files (*.pgn)")
         self.setWindowTitle(os.path.basename(fileName))
         self.palette = app.palette()
