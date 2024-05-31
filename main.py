@@ -3,8 +3,8 @@ import sys
 import re
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
-from PyQt6.QtGui import QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
-from PyQt6.QtCore import QLine, QSize, Qt, QPoint, QSizeF
+from PyQt6.QtGui import QScreen, QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
+from PyQt6.QtCore import pyqtSignal,QLine, QSize, Qt, QPoint, QSizeF
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QScrollArea, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from image_functions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.act_Save_diags.setShortcut(QKeySequence("Ctrl+Shift+i"))
         self.act_Save_diags.triggered.connect(self.saveDiags)
 
-        self.act_Save_img = QAction(QIcon.fromTheme("image"), "&Page", self)
+        self.act_Save_img = QAction(QIcon.fromTheme("image"), "&Enregistrer la page", self)
         self.act_Save_img.setStatusTip("Enregistrer l'image de la page")
         self.act_Save_img.setShortcut(QKeySequence("Ctrl+i"))
         self.act_Save_img.triggered.connect(self.saveImg)
@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         self.act_Img.setShortcut(QKeySequence("Ctrl+Shift+o"))
         self.act_Img.triggered.connect(self.preview)
 
-        self.act_PGN = QAction(QIcon.fromTheme("text-plain"), "PGN", self)
+        self.act_PGN = QAction(QIcon.fromTheme("text-plain"), "Ouvrir un fichier pgn", self)
         self.act_PGN.setStatusTip("Ouvrir un fichier pgn")
         self.act_PGN.setShortcut(QKeySequence("Ctrl+t"))
         self.act_PGN.triggered.connect(self.openPgn)
@@ -288,9 +288,8 @@ class MainWindow(QMainWindow):
             for widget in self.centralWidget().findChildren(QWidget):
                 widget.deleteLater()
 
-
             self.load_widgets()
-            self.adjustSize()
+        self.adjustSize()
 
     def saveForm(self):
         if self.newFileName != self.currentFileName or self.newFileName == "" or "Nouveau document" in self.currentFileName:
@@ -709,8 +708,12 @@ class PGNDialog(QDialog):
 
         self.moveLabels = list()
         # crée les labels affichant les coups
+        i = 0
         for move in self.pgn_data["piecesMoves"]:
-            self.moveLabels.append(QLabel(move))
+            self.moveLabels.append(clickableLabe(move))
+            self.moveLabels[i].clicked.connect(self.clickedLabel)
+            self.moveLabels[i].id = i
+            i += 1
         # met le coup actif en surbrillance
         self.moveLabels[self.active_move].setStyleSheet(f"""
             QLabel {{
@@ -798,6 +801,11 @@ class PGNDialog(QDialog):
 
     def end(self):
         self.active_move = len(self.pgn_data["fens"])-1
+        self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
+        self.refresh()
+
+    def clickedLabel(self):
+        self.active_move = self.sender().id
         self.activeFenLabel.setText("FEN : " +self.pgn_data["fens"][self.active_move])
         self.refresh()
 
@@ -1767,15 +1775,22 @@ class ViewDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(os.path.basename(self.parent().currentFileName))
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+        screen_height = screen_geometry.height()
+
         temp_jpg = "temp.jpg"
         pixmap = QPixmap(temp_jpg)
+
         self.label = QLabel()
         if self.parent().info["format_text"] == "portrait":
-            self.label.setFixedSize(473, 668)
-#           self.setFixedSize(493, 733)
+            labelH = int(screen_height / 100 * 90)
+            labelW = int(labelH*0.7)
+            self.label.setFixedSize(labelW, labelH)
         else:
-            self.label.setFixedSize(891, 630)
-#           self.setFixedSize(911, 690)
+            labelH = int(screen_height / 100 * 80)
+            labelW = int(labelH/0.7)
+            self.label.setFixedSize(labelW, labelH)
         
         self.label.setPixmap(pixmap)
         self.label.setScaledContents(True)
@@ -1857,6 +1872,17 @@ class Alert(QDialog):
         self.layout = QHBoxLayout()
         self.layout.addWidget(alert_msg)
         self.setLayout(self.layout)
+
+class clickableLabe(QLabel):
+    clicked = pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
