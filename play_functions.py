@@ -847,7 +847,7 @@ def isCastlingOk(board, restrictedMovesKing, castle, player, opponent):
     elif player == 'b':
         if 'k' in castle and board[5] == '0' and board[6] == '0' and blackKingside:
             restrictedMovesKing.append(['e8', 'k', 'g8', '0'])
-        elif 'q' in castle and board[2] == '0' and board[3] == '0' and blackQueenside:
+        if 'q' in castle and board[2] == '0' and board[3] == '0' and blackQueenside:
             restrictedMovesKing.append(['e8', 'k', 'c8', '0'])
     return(restrictedMovesKing)
 
