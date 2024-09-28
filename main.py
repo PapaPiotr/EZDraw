@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import json
+from pathlib import Path
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QScreen, QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
@@ -207,7 +208,7 @@ class MainWindow(QMainWindow):
 
     def load_default_settings(self):
         self.settings = dict()
-        with open("settings//settings.json", "r") as openfile:
+        with open(Path("settings/settings.json"), "r") as openfile:
             self.settings = json.load(openfile)
         for key in self.settings:
             self.info[key] = self.settings[key]
@@ -1584,7 +1585,7 @@ class PropDialog(QDialog):
         self.settings["left_state"] = self.info["left_state"]
         self.settings["right_state"] = self.info["right_state"]
 
-        with open("settings//settings.json", "w") as outfile:
+        with open(Path("settings/settings.json"), "w") as outfile:
             json.dump(self.settings, outfile)
 
     def new_exit(self):
