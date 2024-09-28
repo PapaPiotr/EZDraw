@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import json
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QScreen, QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
@@ -205,24 +206,11 @@ class MainWindow(QMainWindow):
         self.load_default_settings()
 
     def load_default_settings(self):
-        fileName = os.path.join("settings","default.txt")
-
-        with open(fileName, "r") as file:
-            settings = file.read().split("|")
-            for setting in settings:
-                sett = setting.split(",")
-
-                if re.search("state",sett[0]):
-                    if sett[1] == "True":
-                        self.info[sett[0]] = True
-                    else:
-                        self.info[sett[0]] = False
-
-                elif re.search("text",sett[0]):
-                    self.info[sett[0]] = sett[1]
-
-                elif re.search("value",sett[0]):
-                    self.info[sett[0]] = int(sett[1])
+        self.settings = dict()
+        with open("settings//settings.json", "r") as openfile:
+            self.settings = json.load(openfile)
+        for key in self.settings:
+            self.info[key] = self.settings[key]
 
     def load_widgets(self):
         i = 1
@@ -292,115 +280,26 @@ class MainWindow(QMainWindow):
         self.adjustSize()
 
     def saveForm(self):
+        self.form = self.info.copy()
+        self.form.pop("page")
+        self.form.pop("boxes")
         if self.newFileName != self.currentFileName or self.newFileName == "" or "Nouveau document" in self.currentFileName:
             self.saveAs()
         else:
             with open(self.currentFileName, "w") as file:
-                file.write("title_state,")
-                file.write(str(self.info["title_state"]) + "|")
-                file.write("numDiag_state,")
-                file.write(str(self.info["numDiag_state"]) + "|")
-                file.write("numDiag_text,")
-                file.write(str(self.info["numDiag_text"]) + "|")
-                file.write("color_state,")
-                file.write(str(self.info["color_state"]) + "|")
-                file.write("color_text,")
-                file.write(str(self.info["color_text"]) + "|")
-                file.write("format_text,")
-                file.write(self.info["format_text"] + "|")
-                file.write("flip_state,")
-                file.write(str(self.info["flip_state"]) + "|")
-                file.write("legend_state,")
-                file.write(str(self.info["legend_state"]) + "|")
-                file.write("cols_value,")
-                file.write(str(self.info["cols_value"]) + "|")
-                file.write("diags_value,")
-                file.write(str(self.info["diags_value"]) + "|")
-                file.write("margin_value,")
-                file.write(str(self.info["margin_value"]) + "|")
-                file.write("coord_state,")
-                file.write(str(self.info["coord_state"]) + "|")
-                file.write("down_state,")
-                file.write(str(self.info["down_state"]) + "|")
-                file.write("up_state,")
-                file.write(str(self.info["up_state"]) + "|")
-                file.write("left_state,")
-                file.write(str(self.info["left_state"]) + "|")
-                file.write("right_state,")
-                file.write(str(self.info["right_state"]) + "|")
-
-                file.write("title_text,")
-                file.write(self.info["title_text"] + "|")
-                file.write("numPage_value,")
-                file.write(str(self.info["numPage_value"]) + "|")
-                file.write("numDiag_value,")
-                file.write(str(self.info["numDiag_value"]))
-
-                for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
-                    file.write( '\n' + fen + '|' + leg + '|' + sym)
-                
+               json.dump(self.form, file) 
             self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
             self.changedFile = False
 
     def saveAs(self):
-        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","CDG Files (*.cdg)")
-        if not re.search('\\.cdg$', self.newFileName):
-            self.newFileName += '.cdg'
+        self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","json Files (*.json)")
+        if not re.search('\\.json$', self.newFileName):
+            self.newFileName += '.json'
         if os.path.basename(self.newFileName) != "":
             self.currentFileName = self.newFileName
             self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
             with open(self.currentFileName, "w") as file:
-                file.write("title_state,")
-                file.write(str(self.info["title_state"]) + "|")
-                file.write("numDiag_state,")
-                file.write(str(self.info["numDiag_state"]) + "|")
-                file.write("numDiag_value,")
-                file.write(str(self.info["numDiag_value"]) + "|")
-                file.write("color_state,")
-                file.write(str(self.info["color_state"]) + "|")
-                file.write("format_text,")
-                file.write(self.info["format_text"] + "|")
-                file.write("flip_state,")
-                file.write(str(self.info["flip_state"]) + "|")
-                file.write("legend_state,")
-                file.write(str(self.info["legend_state"]) + "|")
-                file.write("cols_value,")
-                file.write(str(self.info["cols_value"]) + "|")
-                file.write("diags_value,")
-                file.write(str(self.info["diags_value"]) + "|")
-                file.write("margin_value,")
-                file.write(str(self.info["margin_value"]) + "|")
-                file.write("coord_state,")
-                file.write(str(self.info["coord_state"]) + "|")
-                file.write("down_state,")
-                file.write(str(self.info["down_state"]) + "|")
-                file.write("up_state,")
-                file.write(str(self.info["up_state"]) + "|")
-                file.write("left_state,")
-                file.write(str(self.info["left_state"]) + "|")
-                file.write("right_state,")
-                file.write(str(self.info["right_state"]) + "|")
-
-                file.write("title_text,")
-                file.write(self.info["title_text"] + "|")
-                file.write("numPage_value,")
-                file.write(str(self.info["numPage_value"]) + "|")
-                file.write("numDiag_value,")
-                file.write(str(self.info["numDiag_value"]))
-
-                for fen, leg, sym in zip(self.info["fens"],self.info["legends"],self.info["symbols"]):
-                    file.write( '\n' + fen + '|' + leg + '|' + sym)
-                for arr in self.info["arrows"]:
-                    arrows_num = 0
-                    for a in arr:
-                        arrows_num += 1
-                    i = 1
-                    if arrows_num != 0:
-                        file.write('|')
-                    for a in arr:
-                        file.write(a[0] + ' ' + str(a[1]) + ' ' + str(a[2]))
-                        if i < arrows_num:
-                            file.write(',')
+               json.dump(self.form, file) 
 
             self.changedFile = False
 
@@ -429,6 +328,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
 
     def openDoc(self):
+        self.form = self.info.copy()
+        self.form.pop("page")
+        self.form.pop("boxes")
+
         if self.changedFile:
             dialog = SaveBeforeDialog()
             dialog.exec()
@@ -438,7 +341,7 @@ class MainWindow(QMainWindow):
                 self.saveForm()
             elif result == 3:
                 return(0)
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","CDG Files (*.cdg)")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","json Files (*.json)")
         if os.path.basename(fileName) == "":
             return(0)
         else:
@@ -448,36 +351,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
 
         with open(fileName, 'r') as file:
-            fields = file.read().split("\n")
-            firsLine = fields[0].split("|")
-            for pair in firsLine:
-                info = pair.split(",")
-                if re.search("state", info[0]):
-                    if info[1] == "True":
-                        self.info[info[0]] = True
-                    else:
-                        self.info[info[0]] = False
-                elif re.search("value", info[0]):
-                    self.info[info[0]] = int(info[1])
-                elif re.search("text", info[0]):
-                    self.info[info[0]] = info[1]
-
-            i = 1
-            while i <= self.info["diags_value"]:
-                line = fields[i].split('|')
-                self.info['fens'][i-1]=line[0]
-                self.info['legends'][i-1]=line[1]
-                self.info['symbols'][i-1]=line[2]
-                fields_num = 0
-                for l in line:
-                    fields_num += 1
-
-                if fields_num > 3:
-                    arrows = line[3].split(',')
-                    for arrow in arrows:
-                        arr = arrow.split(' ')
-                        self.info['arrows'][i-1].append([arr[0],int(arr[1]),int(arr[2])])
-                i += 1
+            self.form = json.load(file)
+        for entry in self.form:
+            self.info[entry] = self.form[entry]
 
         for widget in self.centralWidget().findChildren(QWidget):
             widget.deleteLater()
@@ -526,7 +402,6 @@ class MainWindow(QMainWindow):
     def openPgn(self):
         pgn_diag = PGNDialog(self)
         pgn_diag.exec()
-        print("imprimer")
 
     def saveDiags(self):
         self.test = ""
@@ -658,7 +533,7 @@ class PGNDialog(QDialog):
         super().__init__(parent)
 
 
-        self.parent().title_text.setText("")
+#       self.parent().title_text.setText("")
         fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","PGN Files (*.pgn)")
         self.setWindowTitle(os.path.basename(fileName))
         self.palette = app.palette()
@@ -690,6 +565,7 @@ class PGNDialog(QDialog):
         self.autoLegend = QCheckBox("Légende automatique (ex: 'Fig.1 : 1.e4')")
 
         self.titleEdit = QLineEdit(self.parent().info["title_text"])
+        self.titleEdit.textChanged.connect(self.change_title_text)
 
         self.boardLabel = QLabel()
         self.boardLabel.setFixedSize(600,600)
@@ -758,6 +634,7 @@ class PGNDialog(QDialog):
         self.targetDiag = QSpinBox()
         self.targetDiag.setRange(1,self.parent().info["diags_value"])
 
+
         self.sideBoardLayout = QVBoxLayout()
         self.sideBoardLayout.addWidget(self.scrollArea)
         self.sideBoardLayout.addLayout(self.buttonsLayout)
@@ -765,6 +642,8 @@ class PGNDialog(QDialog):
         self.importLayout = QHBoxLayout()
         self.importLayout.addWidget(self.importFenButton)
         self.importLayout.addWidget(self.targetDiag)
+
+        self.exitLayout = QHBoxLayout()
 
         self.mainLayout = QGridLayout()
         if self.parent().info["title_state"]:
@@ -779,6 +658,7 @@ class PGNDialog(QDialog):
         self.mainLayout.addLayout(self.sideBoardLayout,1,2)
         self.mainLayout.addWidget(self.activeFenLabel,2,1)
         self.mainLayout.addLayout(self.importLayout,2,2)
+        self.mainLayout.addLayout(self.exitLayout,3,2)
 
         self.setLayout(self.mainLayout)
 
@@ -841,7 +721,13 @@ class PGNDialog(QDialog):
                     quote = True
         title += addedText + " "
         self.titleEdit.setText(title)
+
         self.parent().title_text.setText(title)
+        self.parent().info["title_text"] = title
+
+    def change_title_text(self,text):
+        self.parent().title_text.setText(text)
+        self.parent().info["title_text"] = text
 
     def refresh(self):
         self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move],False)
@@ -1144,13 +1030,12 @@ class EditDialog(QDialog):
         self.refresh()
 
     def pieces_click(self):
-        if self.active_piece == self.sender().id:
-            self.active_piece = '0'
-        else:
-            self.active_piece = self.sender().id
+        self.active_piece = self.sender().id
         for button in self.buttons:
             if button.id != self.sender().id:
                 button.setChecked(False)
+            else:
+                button.setChecked(True)
 
     def pressEvent(self, event: QMouseEvent):
         self.position = event.pos()
@@ -1418,6 +1303,7 @@ class PropDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+#       print(self.parent().changedInfo)
         if self.parent().changedInfo:
             self.setWindowTitle("Paramètres*")
         else:
@@ -1440,20 +1326,20 @@ class PropDialog(QDialog):
         diag_tab.setLayout(diag_tab_layout)
 
         self.title_state = QCheckBox("Afficher un titre")
-        self.title_state.clicked.connect(self.set_title_state)
         self.title_state.setChecked(self.info["title_state"])
+        self.title_state.clicked.connect(self.set_title_state)
         page_tab_layout.addWidget(self.title_state,0,0)
 
         self.numPage_state = QCheckBox("Afficher un numéro de page")
-        self.numPage_state.clicked.connect(self.set_numPage_state)
         self.numPage_state.setChecked(self.info["numPage_state"])
+        self.numPage_state.clicked.connect(self.set_numPage_state)
         page_tab_layout.addWidget(self.numPage_state,1,0)
 
         page_tab_layout.addWidget(QLabel("Orientation de la page"),2,0)
         self.format_combo = QComboBox()
         self.format_combo.addItems(["portrait","paysage"])
-        self.format_combo.currentTextChanged.connect(self.set_format_text)
         self.format_combo.setCurrentText(self.info["format_text"])
+        self.format_combo.currentTextChanged.connect(self.set_format_text)
         page_tab_layout.addWidget(self.format_combo,2,1)
 
         page_tab_layout.addWidget(QLabel("Nombre de diagrammes"),3,0)
@@ -1472,54 +1358,54 @@ class PropDialog(QDialog):
 
         page_tab_layout.addWidget(QLabel("Marges en pixels"),5,0)
         self.margin_value = QSpinBox()
-        self.margin_value.setValue(20)
+        self.margin_value.setValue(self.info["margin_value"])
         self.margin_value.setRange(0, 200)
         self.margin_value.valueChanged.connect(self.set_margin_value)
         page_tab_layout.addWidget(self.margin_value,5,1)
 
         self.flip_state = QCheckBox("Retourner le plateau quand le trait est aux noirs")
-        self.flip_state.clicked.connect(self.set_flip_state)
         self.flip_state.setChecked(self.info["flip_state"])
+        self.flip_state.clicked.connect(self.set_flip_state)
         diag_tab_layout.addWidget(self.flip_state,0,0)
 
         self.color_state = QCheckBox("Indiquer le trait par une pastille de couleur")
-        self.color_state.clicked.connect(self.set_color_state)
         self.color_state.setChecked(self.info["color_state"])
+        self.color_state.clicked.connect(self.set_color_state)
         diag_tab_layout.addWidget(self.color_state,1,0)
 
         self.numDiag_state = QCheckBox("Numéroter les diagrammes")
-        self.numDiag_state.clicked.connect(self.set_numDiag_state)
         self.numDiag_state.setChecked(self.info["numDiag_state"])
+        self.numDiag_state.clicked.connect(self.set_numDiag_state)
         diag_tab_layout.addWidget(self.numDiag_state,2,0)
 
         self.legend_state = QCheckBox("Afficher une légende sous les diagrammes")
-        self.legend_state.clicked.connect(self.set_legend_state)
         self.legend_state.setChecked(self.info["legend_state"])
+        self.legend_state.clicked.connect(self.set_legend_state)
         diag_tab_layout.addWidget(self.legend_state,3,0)
 
         self.coord_state = QCheckBox("Afficher les coordonnées")
-        self.coord_state.clicked.connect(self.set_coord_state)
         self.coord_state.setChecked(self.info["coord_state"])
+        self.coord_state.clicked.connect(self.set_coord_state)
         diag_tab_layout.addWidget(self.coord_state,4,0)
 
         self.up_state = QCheckBox("au dessus")
-        self.up_state.clicked.connect(self.set_up_state)
         self.up_state.setChecked(self.info["up_state"])
+        self.up_state.clicked.connect(self.set_up_state)
         diag_tab_layout.addWidget(self.up_state,5,0)
 
         self.down_state = QCheckBox("en dessous")
-        self.down_state.clicked.connect(self.set_down_state)
         self.down_state.setChecked(self.info["down_state"])
+        self.down_state.clicked.connect(self.set_down_state)
         diag_tab_layout.addWidget(self.down_state,6,0)
 
         self.left_state = QCheckBox("à gauche")
-        self.left_state.clicked.connect(self.set_left_state)
         self.left_state.setChecked(self.info["left_state"])
+        self.left_state.clicked.connect(self.set_left_state)
         diag_tab_layout.addWidget(self.left_state,7,0)
 
         self.right_state = QCheckBox("à droite")
-        self.right_state.clicked.connect(self.set_right_state)
         self.right_state.setChecked(self.info["right_state"])
+        self.right_state.clicked.connect(self.set_right_state)
         diag_tab_layout.addWidget(self.right_state,8,0)
 
         if not self.info["coord_state"]:
@@ -1576,7 +1462,7 @@ class PropDialog(QDialog):
 
     def set_format_text(self, text):
         self.parent().changedInfo = True
-        self.setWindowTitle("Paramètres*")
+        self.setWindowTitle("Poramètres*")
         if text == "portrait":
             self.info["format_text"] = "portrait"
         else:
@@ -1680,41 +1566,28 @@ class PropDialog(QDialog):
     def new_save_settings(self):
         self.parent().changedInfo = False
         self.setWindowTitle("Paramètres")
-        fileName = os.path.join("settings", "default.txt")
-        with open(fileName, "w") as file:
-            file.write("title_state,")
-            file.write(str(self.info["title_state"]) + "|")
-            file.write("numPage_state,")
-            file.write(str(self.info["numPage_state"]) + "|")
-            file.write("format_text,")
-            file.write(self.info["format_text"] + "|")
-            file.write("diags_value,")
-            file.write(str(self.info["diags_value"]) + "|")
-            file.write("cols_value,")
-            file.write(str(self.info["cols_value"]) + "|")
-            file.write("margin_value,")
-            file.write(str(self.info["margin_value"]) + "|")
-            file.write("flip_state,")
-            file.write(str(self.info["flip_state"]) + "|")
-            file.write("color_state,")
-            file.write(str(self.info["color_state"]) + "|")
-            file.write("numDiag_state,")
-            file.write(str(self.info["numDiag_state"]) + "|")
-            file.write("legend_state,")
-            file.write(str(self.info["legend_state"]) + "|")
-            file.write("coord_state,")
-            file.write(str(self.info["coord_state"]) + "|")
-            file.write("up_state,")
-            file.write(str(self.info["up_state"]) + "|")
-            file.write("down_state,")
-            file.write(str(self.info["down_state"]) + "|")
-            file.write("left_state,")
-            file.write(str(self.info["left_state"]) + "|")
-            file.write("right_state,")
-            file.write(str(self.info["right_state"]))
+
+        self.settings = dict()
+        self.settings["title_state"] = self.info["title_state"]
+        self.settings["numPage_state"] = self.info["numPage_state"]
+        self.settings["numDiag_state"] = self.info["numDiag_state"]
+        self.settings["color_state"] = self.info["color_state"]
+        self.settings["format_text"] = self.info["format_text"]
+        self.settings["flip_state"] = self.info["flip_state"]
+        self.settings["legend_state"] = self.info["legend_state"]
+        self.settings["cols_value"] = self.info["cols_value"]
+        self.settings["diags_value"] = self.info["diags_value"]
+        self.settings["margin_value"] = self.info["margin_value"]
+        self.settings["coord_state"] = self.info["coord_state"]
+        self.settings["down_state"] = self.info["down_state"]
+        self.settings["up_state"] = self.info["up_state"]
+        self.settings["left_state"] = self.info["left_state"]
+        self.settings["right_state"] = self.info["right_state"]
+
+        with open("settings//settings.json", "w") as outfile:
+            json.dump(self.settings, outfile)
 
     def new_exit(self):
-
         self.parent().info["title_state"] = self.info["title_state"]
         self.parent().info["numPage_state"] = self.info["numPage_state"]
         self.parent().info["format_text"] = self.info["format_text"]

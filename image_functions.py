@@ -505,7 +505,7 @@ def draw_box(board, i_state, index, l_state, legend, coord, down, up, left, righ
     box_w = board.width
     box_h = board.height
     index_w = 177
-    legend_h = 2*177
+    legend_h = 4*177
     coord_l = 177
     coord_L = 8*177
 
@@ -610,55 +610,30 @@ def draw_legend(legend, w, h, margin):
     img = Image.new('RGB', (w, h), 'white')
     draw = ImageDraw.Draw(img)
     img_size = font.getbbox(legend)
+
     if img_size[2] > w:
         words = legend.split()
         i = 0
-        j = 0
         new_size = [0,0,0,0]
-        f_line_size = [0,0,0,0]
-        s_line_size = [0,0,0,0]
-        t_line_size = [0,0,0,0]
-        string = ''
-        first_line = ''
-        line_height = 0
+        max_height = 0
+        margin = 0
+        lines = list()
 
+        lines.append('')
         for word in words:
-            i += 1
-        while j < i and new_size[2] < w:
-            first_line = string
-            f_line_size = new_size
-            string += words[j] + ' '
-            new_size = font.getbbox(string)
-            if new_size[3] > line_height:
-                line_height = new_size[3]
-            j += 1
-        string = ''
-        draw.text(((w-f_line_size[2])/2, (0)), first_line, font = font, fill = 'black')
-        j -= 1
-        if new_size[2] >= w:
-            second_line = words[j - 1] + ' '
-            new_size = [0,0,0,0]
-            while j < i and new_size[2] < w:
-                second_line = string
-                s_line_size = new_size
-                string += words[j] + ' '
-                new_size = font.getbbox(string)
-                if new_size[3] > line_height:
-                    line_height = new_size[3]
-                j += 1
-            string = ''
-            draw.text(((w-s_line_size[2])/2, line_height), second_line, font = font, fill = 'black')
-            j -= 1
-        if new_size[2] >= w:
-            third_line = words[j - 1] + ' '
-            while j < i:
-                third_line += words[j] + ' '
-                t_line_size = font.getbbox(third_line)
-                if t_line_size[3] > line_height:
-                    line_height = t_line_size[3]
-                j += 1
-            draw.text(((w-t_line_size[2])/2, line_height * 2), third_line, font = font, fill = 'black')
+            new_size = font.getbbox(lines[-1] + word + ' ')
+            if new_size[3] > max_height:
+                max_height = new_size[3]
+            if new_size[2] < w:
+                lines[-1] += ( word + ' ')
+            else:
+                lines.append(word + ' ')
+        margin = (h - (max_height * len(lines)))/2
 
+        for line in lines:
+            new_size = font.getbbox(line)
+            draw.text(((w - new_size[2])/2, margin + max_height * i), line, font = font, fill = 'black')
+            i += 1
     else:
         draw.text(((w-img_size[2])/2, (h-img_size[3])/2), legend, font = font, fill = 'black')
     return(img)

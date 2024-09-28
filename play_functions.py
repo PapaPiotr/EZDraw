@@ -924,11 +924,11 @@ def assessPosition(fen):
     else:
         if not infos['legalMoves']:
             #pat
-            #print('stalemate')
             exit()
 
     return(infos)
 
+#renvoie le tableau correspondant au coup à jouer
 def getMove(legalMoves, move):
     moveList = list()
     whiteShort = ['e1', 'K', 'g1', '0']
@@ -968,19 +968,17 @@ def getMove(legalMoves, move):
                     moveList.append(p)
 
     elif len(move) == 4:
-
         promotion = move[2] == '='
         new_piece = move[3] in 'RNBQ'
         capture = move[1] == 'x'
 
         for p in legalMoves:
-            piece_name = isSamePiece(move[0], p)
-            pawn = p[1] in "pP"
+            piece_name = isSamePiece(move[0], p) and move[0].isupper()
+            pawn = p[1] in "pP" and move[0].islower()
             column = move[0] in p[0]
             added_info = move[1] in p[0]
             landing_square_beg = move[0:2] == p[2]
             landing_square_end = move[2:4] == p[2]
-            landing_row = move[1] == p[2][1]
 
             exd4 = pawn and column and capture and landing_square_end
             e8_Q = landing_square_beg and promotion and new_piece

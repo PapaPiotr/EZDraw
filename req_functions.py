@@ -43,6 +43,8 @@ def getFenFromId(id):
         if playedMove != 0:
             infos = updateInfos(positionStatus, playedMove)
             fen = getFen(infos)
+            drawBoard(fen)
+
     return(fen)
 
 def openPgnFile(fileName):
@@ -81,26 +83,11 @@ def openPgnFile(fileName):
             piece = ""
             char = ""
             for l in move:
-                if l in "abcdefghO123456789x-=":
+                if l in "abcdefghRNBQKO123456789x-=":
                     piece += l
                     char += l
                 elif l in "+#":
                     piece += l
-                elif l == "K":
-                    piece += "♔"
-                    char += l
-                elif l == "Q":
-                    piece += "♕"
-                    char += l
-                elif l == "B":
-                    piece += "♗"
-                    char += l
-                elif l == "N":
-                    piece += "♘"
-                    char += l
-                elif l == "R":
-                    piece += "♖"
-                    char += l
             pgn_data["piecesMoves"].append(piece)
             pgn_data["moves"].append(char)
 
