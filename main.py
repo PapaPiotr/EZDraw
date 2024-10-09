@@ -3,6 +3,7 @@ import sys
 import re
 import json
 from pathlib import Path
+from os.path import exists
 from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QScreen, QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
 
         self.currentFileName = "Nouveau document"
         self.newFileName = ""
-        self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
+        self.setWindowTitle(self.currentFileName + " | EZDraw Diagramm Generator")
         
         self.mainWidget = QWidget()
 
@@ -207,11 +208,33 @@ class MainWindow(QMainWindow):
         self.load_default_settings()
 
     def load_default_settings(self):
-        self.settings = dict()
-        with open(Path("settings/settings.json"), "r") as openfile:
-            self.settings = json.load(openfile)
-        for key in self.settings:
-            self.info[key] = self.settings[key]
+        if exists("settings.json"):
+            self.settings = dict()
+            with open(Path("settings.json"), "r") as openfile:
+                self.settings = json.load(openfile)
+            for key in self.settings:
+                self.info[key] = self.settings[key]
+        else:
+            self.settings = dict()
+            self.settings["title_state"] = self.info["title_state"]
+            self.settings["numPage_state"] = self.info["numPage_state"]
+            self.settings["numDiag_state"] = self.info["numDiag_state"]
+            self.settings["color_state"] = self.info["color_state"]
+            self.settings["format_text"] = self.info["format_text"]
+            self.settings["flip_state"] = self.info["flip_state"]
+            self.settings["legend_state"] = self.info["legend_state"]
+            self.settings["cols_value"] = self.info["cols_value"]
+            self.settings["diags_value"] = self.info["diags_value"]
+            self.settings["margin_value"] = self.info["margin_value"]
+            self.settings["coord_state"] = self.info["coord_state"]
+            self.settings["down_state"] = self.info["down_state"]
+            self.settings["up_state"] = self.info["up_state"]
+            self.settings["left_state"] = self.info["left_state"]
+            self.settings["right_state"] = self.info["right_state"]
+
+            with open(Path("settings.json"), "w") as outfile:
+                json.dump(self.settings, outfile)
+                
 
     def load_widgets(self):
         i = 1
@@ -289,7 +312,7 @@ class MainWindow(QMainWindow):
         else:
             with open(self.currentFileName, "w") as file:
                json.dump(self.form, file) 
-            self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
+            self.setWindowTitle(os.path.basename(self.currentFileName) + " | EZDraw Diagramm Generator")
             self.changedFile = False
 
     def saveAs(self):
@@ -298,7 +321,7 @@ class MainWindow(QMainWindow):
             self.newFileName += '.json'
         if os.path.basename(self.newFileName) != "":
             self.currentFileName = self.newFileName
-            self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
+            self.setWindowTitle(os.path.basename(self.currentFileName) + " | EZDraw Diagramm Generator")
             with open(self.currentFileName, "w") as file:
                json.dump(self.form, file) 
 
@@ -326,7 +349,7 @@ class MainWindow(QMainWindow):
         self.load_widgets()
         self.currentFileName = "Nouveau document"
         self.newFileName = ""
-        self.setWindowTitle(self.currentFileName + " | CuteFEN Diagramm Generator")
+        self.setWindowTitle(self.currentFileName + " | EZDraw Diagramm Generator")
 
     def openDoc(self):
         self.form = self.info.copy()
@@ -349,7 +372,7 @@ class MainWindow(QMainWindow):
             self.currentFileName = fileName
             self.newFileName = fileName
 
-        self.setWindowTitle(os.path.basename(self.currentFileName) + " | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + " | EZDraw Diagramm Generator")
 
         with open(fileName, 'r') as file:
             self.form = json.load(file)
@@ -477,7 +500,7 @@ class MainWindow(QMainWindow):
     def change_title_text(self, text):
         self.info["title_text"] = text
         self.changedFile = True
-        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | EZDraw Diagramm Generator")
 
     def change_fens(self, text):
         i = 0
@@ -487,7 +510,7 @@ class MainWindow(QMainWindow):
                 break
             i += 1
         self.changedFile = True
-        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | EZDraw Diagramm Generator")
 
     def change_legends(self, text):
         i = 0
@@ -497,17 +520,17 @@ class MainWindow(QMainWindow):
                 break
             i += 1
         self.changedFile = True
-        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | EZDraw Diagramm Generator")
 
     def change_numPage_value(self, value):
         self.info["numPage_value"] = value
         self.changedFile = True
-        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | EZDraw Diagramm Generator")
 
     def change_numDiag_value(self, value):
         self.info["numDiag_value"] = value
         self.changedFile = True
-        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | CuteFEN Diagramm Generator")
+        self.setWindowTitle(os.path.basename(self.currentFileName) + "* | EZDraw Diagramm Generator")
 
     def openEdit(self):
         self.info["active_editor"] = self.sender().id
@@ -1585,7 +1608,7 @@ class PropDialog(QDialog):
         self.settings["left_state"] = self.info["left_state"]
         self.settings["right_state"] = self.info["right_state"]
 
-        with open(Path("settings/settings.json"), "w") as outfile:
+        with open(Path("settings.json"), "w") as outfile:
             json.dump(self.settings, outfile)
 
     def new_exit(self):
@@ -1675,9 +1698,9 @@ class ViewDialog(QDialog):
         self.save_diags_push = QPushButton("Enregistrer les diagrammes")
         self.save_diags_push.id = "diags"
         self.save_diags_push.clicked.connect(self.push)
-        self.print_push = QPushButton("Imprimer la page")
-        self.print_push.id = "diags"
-        self.print_push.clicked.connect(self.push)
+#       self.print_push = QPushButton("Imprimer la page")
+#       self.print_push.id = "diags"
+#       self.print_push.clicked.connect(self.push)
         self.cancel_push = QPushButton("Fermer")
         self.cancel_push.id = "cancel"
         self.cancel_push.clicked.connect(self.push)
@@ -1688,7 +1711,7 @@ class ViewDialog(QDialog):
 
         buttons_layout.addWidget(self.save_page_push)
         buttons_layout.addWidget(self.save_diags_push)
-        buttons_layout.addWidget(self.print_push)
+#       buttons_layout.addWidget(self.print_push)
         buttons_layout.addWidget(self.cancel_push)
         buttons_layout.setAlignment(self.cancel_push, Qt.AlignmentFlag.AlignBottom)
 
@@ -1759,6 +1782,8 @@ class clickableLabe(QLabel):
         super().mousePressEvent(event)
 
 if __name__ == "__main__":
+
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
