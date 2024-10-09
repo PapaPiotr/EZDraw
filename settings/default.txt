@@ -1,1 +1,0 @@
-title_state,True|numPage_state,True|format_text,portrait|diags_value,15|cols_value,3|margin_value,5|flip_state,True|color_state,True|color_text,à gauche|numDiag_state,True|numDiag_text,à gauche|legend_state,True|coord_state,True|up_state,False|down_state,True|left_state,False|right_state,True
