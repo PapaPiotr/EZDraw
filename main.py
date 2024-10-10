@@ -318,18 +318,21 @@ class MainWindow(QMainWindow):
 
     def saveAs(self):
         self.newFileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","json Files (*.json)")
-        if not re.search('\\.json$', self.newFileName):
-            self.newFileName += '.json'
-        if os.path.basename(self.newFileName) != "":
-            self.currentFileName = self.newFileName
-            self.setWindowTitle(os.path.basename(self.currentFileName) + " | EZDraw Diagramm Generator")
-            with open(self.currentFileName, "w") as file:
-               json.dump(self.form, file) 
-
-            self.changedFile = False
-
+        if self.newFileName == "":
+            pass
         else:
-            self.newFileName = self.currentFileName
+            if not re.search('\\.json$', self.newFileName):
+                self.newFileName += '.json'
+            if os.path.basename(self.newFileName) != "":
+                self.currentFileName = self.newFileName
+                self.setWindowTitle(os.path.basename(self.currentFileName) + " | EZDraw Diagramm Generator")
+                with open(self.currentFileName, "w") as file:
+                   json.dump(self.form, file) 
+
+                self.changedFile = False
+
+            else:
+                self.newFileName = self.currentFileName
 
     def newDoc(self):
         if self.changedFile:
