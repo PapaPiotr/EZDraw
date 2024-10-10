@@ -62,6 +62,13 @@ EZDraw permet de sauvegarder et charger des formulaires afin de ne pas avoir à 
 -Lancez le programme:
   python3 (ou python) main.py
 
+## Créer un executable via pyinstaller
+
+-Installer pyinstaller sur votre machine:
+ pip install -U pyinstaller
+-créer l'exécutable en ajoutant les dossiers contenant les images et polices d'écriture:
+ pyinstaller --noconsole --add-data board:board --add-data pieces:pieces --add-data arrows:arrows --add-data symbols:symbols --add-data fonts:fonts main.py
+
 ## Dépendances
 
 Ce programme utilise les bibliothèques suivantes :
