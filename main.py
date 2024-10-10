@@ -1,4 +1,5 @@
 import os
+from pickle import FALSE
 import sys
 import re
 import json
@@ -781,8 +782,11 @@ class EditDialog(QDialog):
 
         self.setWindowTitle("Édition du diagramme n°"+ str(self.parent().info["active_editor"]+1))
 
-        self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.arrows_dir = os.path.join(self.current_dir, "arrows")
+        if getattr(sys, 'frozen', False):
+            self.current_dir = sys._MEIPASS
+        else:
+            self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.arrows_dir = os.path.join(self.current_dir, "ressources")
         # identification du fen a éditer
         self.diag_id = self.parent().info["active_editor"]
 
@@ -800,11 +804,11 @@ class EditDialog(QDialog):
             self.printed_arrows = flip_arrows(self.printed_arrows)
 
         # creation de l'image du plateau
-        self.board_dir = os.path.join(self.current_dir, 'board')
+        self.board_dir = os.path.join(self.current_dir, 'ressources')
         empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
-        pieces_dir = os.path.join(self.current_dir, 'pieces')
+        pieces_dir = os.path.join(self.current_dir, 'ressources')
         self.buttons = list()
         self.infos = {}
         bK_path = os.path.join(pieces_dir, 'bK.png')
@@ -832,7 +836,7 @@ class EditDialog(QDialog):
         wP_path = os.path.join(pieces_dir, 'wP.png')
         self.infos["P"]= wP_path
 
-        symbols_dir = os.path.join(self.current_dir, 'symbols')
+        symbols_dir = os.path.join(self.current_dir, 'ressources')
         bt_path = os.path.join(symbols_dir, 'bt.png')
         self.infos["t"]= bt_path
         by_path = os.path.join(symbols_dir, 'by.png')
@@ -1782,8 +1786,6 @@ class clickableLabe(QLabel):
         super().mousePressEvent(event)
 
 if __name__ == "__main__":
-
-
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
