@@ -1,6 +1,7 @@
 import os
 from pickle import FALSE
 import sys
+import platform
 import re
 import json
 from pathlib import Path
@@ -9,18 +10,57 @@ from PIL import ImageFont, Image
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QScreen, QAction, QGradient, QIcon, QImage, QKeySequence, QPageSize, QPainter, QPalette, QPixmap, QMouseEvent, QCursor
 from PyQt6.QtCore import pyqtSignal,QLine, QSize, Qt, QPoint, QSizeF
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QRadioButton, QScrollArea, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QMainWindow, QLabel, QPlainTextEdit, QRadioButton, QScrollArea, QSizePolicy, QStackedLayout, QStatusBar, QTabWidget, QTextBrowser, QTextEdit, QToolBar, QGridLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, QSpinBox, QDialog
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from image_functions import draw_board, submit, test_fen, unpack_fen, flip_fen, repack_fen, flip_sym, flip_arrows, getCenter, getSquare
 from req_functions import getFenFromId, openPgnFile
+
+def checkTheme():
+    operative = platform.system()
+    if operative == "Windows":
+        try:
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
+            value, _ = winreg.QueryValueEx(key, 'AppsUseLightTheme')
+            if value == 1:
+                return("light")
+            else:
+                return("dark")
+        except ImportError:
+            return("light")
+
+    elif operative == "Darwin":
+        import subprocess
+        try:
+            output = subprocess.check_output(['defaults', 'read', '-g', 'AppleInterfaceStyle']).strip().decode('utf-8')
+            return "dark" if output == "Dark" else "light"
+        except subprocess.CalledProcessError:
+            return ("light")
+
+    elif operative == "Linux":
+        import subprocess
+        try:
+            output = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme']).strip().decode('utf-8')
+            return "dark" if "dark" in output.lower() else "light"
+        except subprocess.CalledProcessError:
+            return ("light")
+    else:
+        return ("light")
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.theme = checkTheme()
+        if getattr(sys, 'frozen', False):
+            self.current_dir = sys._MEIPASS
+        else:
+            self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.ressources_dir = os.path.join(self.current_dir, "ressources")
         self.currentFileName = "Nouveau document"
         self.newFileName = ""
         self.setWindowTitle(self.currentFileName + " | EZDraw Diagramm Generator")
+        self.setWindowIcon(QIcon(os.path.join(self.ressources_dir, "chess.png")))
         
         self.mainWidget = QWidget()
 
@@ -42,66 +82,82 @@ class MainWindow(QMainWindow):
         self.implement_dict()
         
         # Définition des actions
-        self.act_Settings = QAction(QIcon.fromTheme("document-properties"), "&Paramètres", self)
-        self.act_Settings.setStatusTip("Paramètres")
-        self.act_Settings.setShortcut(QKeySequence("Ctrl+Shift+p"))
-        self.act_Settings.triggered.connect(self.openProp)
+        if self.theme == "light":
+            self.act_New = QAction(QIcon(os.path.join(self.ressources_dir, "add-document.png")), "Nouveau document", self)
+            self.act_Open = QAction(QIcon(os.path.join(self.ressources_dir, "folder-open.png")), "Ouvrir un formulaire", self)
+            self.act_Save = QAction(QIcon(os.path.join(self.ressources_dir, "save.png")), "Enregistrer le formulaire", self)
+            self.act_Save_as = QAction(QIcon(os.path.join(self.ressources_dir, "save-as.png")), "Enregistrer le formulaire sous", self)
+            self.act_PGN = QAction(QIcon(os.path.join(self.ressources_dir, "overview.png")), "Ouvrir un fichier pgn", self)
+            self.act_Img = QAction(QIcon(os.path.join(self.ressources_dir, "search.png")), "Aperçu de la page", self)
+            self.act_Save_img = QAction(QIcon(os.path.join(self.ressources_dir, "image.png")), "Enregistrer la page", self)
+            self.act_Save_diags = QAction(QIcon(os.path.join(self.ressources_dir, "images.png")), "Enregistrer les diagrammes", self)
+            self.act_Settings = QAction(QIcon(os.path.join(self.ressources_dir, "settings.png")), "Paramètres", self)
+            self.act_Help = QAction(QIcon(os.path.join(self.ressources_dir, "help.png")), "Aide", self)
+            self.act_About = QAction(QIcon(os.path.join(self.ressources_dir, "info.png")), "À propos", self)
+            self.act_Exit = QAction(QIcon(os.path.join(self.ressources_dir, "power.png")), "Quitter", self)
+        else:
+            self.act_New = QAction(QIcon(os.path.join(self.ressources_dir, "add-document-light.png")), "Nouveau document", self)
+            self.act_Open = QAction(QIcon(os.path.join(self.ressources_dir, "folder-open-light.png")), "Ouvrir un formulaire", self)
+            self.act_Save = QAction(QIcon(os.path.join(self.ressources_dir, "save-light.png")), "Enregistrer le formulaire", self)
+            self.act_Save_as = QAction(QIcon(os.path.join(self.ressources_dir, "save-as-light.png")), "Enregistrer le formulaire sous", self)
+            self.act_PGN = QAction(QIcon(os.path.join(self.ressources_dir, "overview-light.png")), "Ouvrir un fichier pgn", self)
+            self.act_Img = QAction(QIcon(os.path.join(self.ressources_dir, "search-light.png")), "Aperçu de la page", self)
+            self.act_Save_img = QAction(QIcon(os.path.join(self.ressources_dir, "image-light.png")), "Enregistrer la page", self)
+            self.act_Save_diags = QAction(QIcon(os.path.join(self.ressources_dir, "images-light.png")), "Enregistrer les diagrammes", self)
+            self.act_Settings = QAction(QIcon(os.path.join(self.ressources_dir, "settings-light.png")), "Paramètres", self)
+            self.act_Help = QAction(QIcon(os.path.join(self.ressources_dir, "help-light.png")), "Aide", self)
+            self.act_About = QAction(QIcon(os.path.join(self.ressources_dir, "info-light.png")), "À propos", self)
+            self.act_Exit = QAction(QIcon(os.path.join(self.ressources_dir, "power-light.png")), "Quitter", self)
+            
 
-        self.act_New = QAction(QIcon.fromTheme("document-new"), "Nouveau document", self)
         self.act_New.setStatusTip("Nouveau document")
         self.act_New.setShortcut(QKeySequence("Ctrl+n"))
         self.act_New.triggered.connect(self.newDoc)
 
-        self.act_Save = QAction(QIcon.fromTheme("document-save"), "Enregistrer le formulaire", self)
-        self.act_Save.setStatusTip("Enregistrer le formulaire")
-        self.act_Save.setShortcut(QKeySequence("Ctrl+s"))
-        self.act_Save.triggered.connect(self.saveForm)
-
-        self.act_Save_as = QAction(QIcon.fromTheme("document-save-as"), "Enregistrer sous", self)
-        self.act_Save_as.setStatusTip("Enregistrer sous")
-        self.act_Save_as.setShortcut(QKeySequence("Ctrl+Shift+s"))
-        self.act_Save_as.triggered.connect(self.saveAs)
-
-        self.act_Open = QAction(QIcon.fromTheme("document-open"), "Ouvrir un formulaire", self)
         self.act_Open.setStatusTip("Ouvrir un formulaire")
         self.act_Open.setShortcut(QKeySequence("Ctrl+o"))
         self.act_Open.triggered.connect(self.openDoc)
 
-        self.act_Save_diags = QAction(QIcon.fromTheme("folder-pictures"), "&Enregistrer les diagrammes", self)
-        self.act_Save_diags.setStatusTip("Enregistrer une image par diagramme")
-        self.act_Save_diags.setShortcut(QKeySequence("Ctrl+Shift+i"))
-        self.act_Save_diags.triggered.connect(self.saveDiags)
+        self.act_Save.setStatusTip("Enregistrer le formulaire")
+        self.act_Save.setShortcut(QKeySequence("Ctrl+s"))
+        self.act_Save.triggered.connect(self.saveForm)
 
-        self.act_Save_img = QAction(QIcon.fromTheme("image"), "&Enregistrer la page", self)
-        self.act_Save_img.setStatusTip("Enregistrer l'image de la page")
-        self.act_Save_img.setShortcut(QKeySequence("Ctrl+i"))
-        self.act_Save_img.triggered.connect(self.saveImg)
+        self.act_Save_as.setStatusTip("Enregistrer sous")
+        self.act_Save_as.setShortcut(QKeySequence("Ctrl+Shift+s"))
+        self.act_Save_as.triggered.connect(self.saveAs)
 
-        self.act_Img = QAction(QIcon.fromTheme("view-preview"), "&Aperçu de la page de diagrammes", self)
+        self.act_PGN.setStatusTip("Ouvrir un fichier pgn")
+        self.act_PGN.setShortcut(QKeySequence("Ctrl+t"))
+        self.act_PGN.triggered.connect(self.openPgn)
+
         self.act_Img.setStatusTip("Aperçu de la page de diagrammes")
         self.act_Img.setShortcut(QKeySequence("Ctrl+Shift+o"))
         self.act_Img.triggered.connect(self.preview)
 
-        self.act_PGN = QAction(QIcon.fromTheme("text-plain"), "Ouvrir un fichier pgn", self)
-        self.act_PGN.setStatusTip("Ouvrir un fichier pgn")
-        self.act_PGN.setShortcut(QKeySequence("Ctrl+t"))
-        self.act_PGN.triggered.connect(self.openPgn)
+        self.act_Save_img.setStatusTip("Enregistrer l'image de la page")
+        self.act_Save_img.setShortcut(QKeySequence("Ctrl+i"))
+        self.act_Save_img.triggered.connect(self.saveImg)
+
+        self.act_Save_diags.setStatusTip("Enregistrer une image par diagramme")
+        self.act_Save_diags.setShortcut(QKeySequence("Ctrl+Shift+i"))
+        self.act_Save_diags.triggered.connect(self.saveDiags)
+
+        self.act_Settings.setStatusTip("Paramètres")
+        self.act_Settings.setShortcut(QKeySequence("Ctrl+Shift+p"))
+        self.act_Settings.triggered.connect(self.openProp)
 
 #       self.act_PGN = QAction(QIcon.fromTheme("document-print"), "Imprimer", self)
 #       self.act_PGN.setStatusTip("Imprimer")
 #       self.act_PGN.setShortcut(QKeySequence("Ctrl+p"))
 #       self.act_PGN.triggered.connect(self.print)
 
-        self.act_Help = QAction(QIcon.fromTheme("help-contents"), "Aide", self)
         self.act_Help.setStatusTip("Aide")
         self.act_Help.setShortcut(QKeySequence("Ctrl+h"))
         self.act_Help.triggered.connect(self.openHelp)
 
-        self.act_About = QAction(QIcon.fromTheme("help-about"), "À propos", self)
         self.act_About.setStatusTip("À propos")
         self.act_About.triggered.connect(self.openAbout)
 
-        self.act_Exit = QAction(QIcon.fromTheme("application-exit"), "Quitter", self)
         self.act_Exit.setStatusTip("Quitter")
         self.act_Exit.setShortcut(QKeySequence("Ctrl+q"))
         self.act_Exit.triggered.connect(self.quit)
@@ -114,6 +170,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Open)
         self.toolbar.addAction(self.act_PGN)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_Save)
         self.toolbar.addAction(self.act_Save_as)
         self.toolbar.addSeparator()
@@ -134,6 +191,7 @@ class MainWindow(QMainWindow):
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Open)
         self.fileMenu.addAction(self.act_PGN)
+        self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.act_Save)
         self.fileMenu.addAction(self.act_Save_as)
         self.fileMenu.addSeparator()
@@ -236,7 +294,6 @@ class MainWindow(QMainWindow):
             with open(Path("settings.json"), "w") as outfile:
                 json.dump(self.settings, outfile)
                 
-
     def load_widgets(self):
         i = 1
         # Section de titre
@@ -428,8 +485,10 @@ class MainWindow(QMainWindow):
         view.exec()
 
     def openPgn(self):
-        pgn_diag = PGNDialog(self)
-        pgn_diag.exec()
+        self.fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","PGN Files (*.pgn)")
+        if self.fileName != "":
+            pgn_diag = PGNDialog(self)
+            pgn_diag.exec()
 
     def saveDiags(self):
         self.test = ""
@@ -492,13 +551,14 @@ class MainWindow(QMainWindow):
             if not re.search('\\.png$', fileName):
                 fileName += '.png'
             self.info["page"].save(fileName)
-
         
     def openHelp(self):
-        print("help")
+        dialog = HelpDialog(self)
+        dialog.exec()
     
     def openAbout(self):
-        print("About")
+        dialog = AboutDialog(self)
+        dialog.exec()
 
     # Slots des Widgets
     def change_title_text(self, text):
@@ -560,9 +620,7 @@ class PGNDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-
-#       self.parent().title_text.setText("")
-        fileName, _ = QFileDialog.getOpenFileName(self, "Selectionner le fichier","","PGN Files (*.pgn)")
+        fileName = self.parent().fileName
         self.setWindowTitle(os.path.basename(fileName))
         self.palette = app.palette()
         self.active_move = 0
@@ -1776,6 +1834,65 @@ class Alert(QDialog):
         self.layout = QHBoxLayout()
         self.layout.addWidget(alert_msg)
         self.setLayout(self.layout)
+
+class AboutDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("À propos")
+        text_help = QTextBrowser(self)
+        text_help.setReadOnly(True)
+        text_help.setOpenExternalLinks(True)
+
+        text = """
+<h1>EZDraw</h1>
+<p>EZDraw est une application développée par Pierre FOULQUIÉ</p>
+<p><a href="https://github.com/PapaPiotr/EZDraw">https://github.com/PapaPiotr/EZDraw</a></p>
+<p>Version : 1.0.0</p>
+<p>Licence : GPL v3</p>
+
+<h3>Licences images :</h3>
+<p>Les images des pièces d'échecs sont réalisées par Armando Hernandez Marroquin et sont distribuées sous la licence GPLv2+.</p>
+<p>Les images de plateau, flèches et symboles sont réalisées par Pierre Foulquié et sont distribuées sous la licence GPL3.</p>
+
+<h3>Licences icones :</h3>
+<p>Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+<p><a href="https://www.flaticon.com/free-icons/seo-and-web" title="seo and web icons">Seo and web icons created by Freepik - Flaticon</a></p>
+        """
+        text_help.setHtml(text)
+
+        layout = QVBoxLayout()
+        layout.addWidget(text_help)
+        self.setLayout(layout)
+
+class HelpDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Aide")
+        text_help = QTextBrowser(self)
+        text_help.setReadOnly(True)
+
+        text = """
+<h2>EZDraw est une application qui permet de réaliser facilement des pages de diagrammes d'échecs.</h2>
+<h3>Les diagrammes peuvent être générés de plusieurs façons:</h3>
+<p>- un code FEN peut être saisi ou collé dans le champ indiqué dans la fenêtre principale. Seuls les deux premiers segments du code FEN sont nécessaire à la génération de la position : celui qui encode la position et celui qui indique le trait. Par défaut, le champ correspondant est rempli par le code encodant la position de départ.</p>
+<p>- un identifiant de problème copié sur le site lichess.org peut être collé dans le champ indiqué dans la fenêtre principale. L'identifiant est constitué par un # suivi d'une chaîne de caractères alphanumériques. Afin de générer le diagramme depuis cet identifiant, vous devez disposer d'une connection à internet. L'identifiant saisi sera remplacé par le FEN correspondant après génération de la page ou à l'ouverture de l'éditeur graphique.</p>
+<p>- l'application gère l'ouverture des fichiers .pgn (assurez-vous que le fichier ne contienne qu'une seule partie). La partie est ouverte dans une fenêtre secondaire où il est possible de faire défiler les coups et d'extraire les positions souhaitées en indiquant le numéro du diagramme dans lequel on souhaite les afficher.</p>
+<p>Un éditeur graphique permet également de composer les positions à la main. Le clic gauche de la souris colle la pièce sélectionnée sur l'échiquier, ou bien efface cette pièce si elle s'y trouve déjà. Le clic droit colle la pièce de la couleur opposée. Le clic central permet de déplacer une pièce en glisser-déposer. L'éditeur permet aussi d'ajouter des symboles ou des flèches sur le diagramme.</p>
+<h3>Les diagrammes peuvent être enregistrés de trois façons différentes:</h3>
+<p>- la fonction "Enregistrer l'image" depuis l'éditeur graphique crée une image comprenant uniquement le diagramme sans décoration (coordonnées, légende, numéro, etc).</p>
+<p>- la fonction "Enregistrer les diagrammes" depuis la fenêtre principale génère une image différente pour chaque diagramme. L'image comprend les décorations définies dans les paramètres.</p>
+<p>- la fonction "Enregistrer l'image de la page" depuis la fenêtre principale génère l'image de la page comprenant tous les diagrammes mis en page selon les paramètres définis.</p>
+<p>Les deux dernières fonctions peuvent être appelées depuis la fenêtre d'aperçu de la page.</p>
+<h3>EZDraw permet de sauvegarder et charger des formulaires sous forme de fichiers .json, afin de modifier un ou plusieurs diagrammes d'une page sans avoir besoin de la recréer depuis le début.</h3>
+        """
+        text_help.setHtml(text)
+
+        layout = QVBoxLayout()
+        layout.addWidget(text_help)
+        self.setLayout(layout)
+
 
 class clickableLabe(QLabel):
     clicked = pyqtSignal()

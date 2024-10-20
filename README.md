@@ -37,6 +37,8 @@ This program is distributed under the GNU General Public License version 3. Plea
 ## Credits
 
 - Chess piece images are created by Armando Hernandez Marroquin and are distributed under the GPLv2+ license.
+- Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a>
+- <a href="https://www.flaticon.com/free-icons/seo-and-web" title="seo and web icons">Seo and web icons created by Freepik - Flaticon</a>
 - Board, arrow, and symbol images are created by Pierre Foulquié and are distributed under the GPL3 license.
 
 ## Français
@@ -78,3 +80,5 @@ Ce programme est distribué sous la licence GNU General Public License version 3
 
 - Les images des pièces d'échecs sont réalisées par Armando Hernandez Marroquin et sont distribuées sous la licence GPLv2+.
 - Les images de plateau, flèches et symboles sont réalisées par Pierre Foulquié et sont distribuées sous la licence GPL3.
+- Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a>
+- <a href="https://www.flaticon.com/free-icons/seo-and-web" title="seo and web icons">Seo and web icons created by Freepik - Flaticon</a>
