@@ -1,3 +1,4 @@
+import tempfile
 import os
 import sys
 from PIL import Image, ImageDraw, ImageFont
@@ -129,9 +130,11 @@ def submit(self, info):
 
 # draws the page
     page = draw_page(orient, t_state, title, n_state, num, col, margin, boxes)
-    temp_jpg = "temp.jpg"
-    page.save(temp_jpg)
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
+        temp_path = temp_file.name
+    page.save(temp_path)
     self.info["page"] = page
+    self.info["temp"] = temp_path
 
 def color_test(fen):
     blocks = fen.split()

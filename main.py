@@ -1,3 +1,4 @@
+import tempfile
 import os
 from pickle import FALSE
 import sys
@@ -47,11 +48,26 @@ def checkTheme():
     else:
         return ("light")
 
+def getSettingsFile(app_name = "EZDraw", file_name = "settings.json"):
+    if os.name == "posix":
+        settings_dir = os.path.join(os.path.expanduser("~"), ".config", app_name)
+    elif os.name == "nt":
+        settings_dir = os.path.join(os.getenv("LOCALAPPDATA"),app_name)
+    else:
+        raise NotImplementedError("Système d'exploitation non reconnu")
+
+    os.makedirs(settings_dir, exist_ok=True)
+    return os.path.join(settings_dir, file_name)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_board_file:
+            self.temp_board_path = temp_board_file.name
         self.theme = checkTheme()
+        self.settigsFile = getSettingsFile()
+        print(self.settigsFile)
         if getattr(sys, 'frozen', False):
             self.current_dir = sys._MEIPASS
         else:
@@ -252,6 +268,7 @@ class MainWindow(QMainWindow):
         self.info["active_editor"] = int()
 
         # images
+        self.info["temp"] = None
         self.info["page"] = None
         self.info["boxes"] = list()
 
@@ -267,9 +284,9 @@ class MainWindow(QMainWindow):
         self.load_default_settings()
 
     def load_default_settings(self):
-        if exists("settings.json"):
+        if exists(self.settigsFile):
             self.settings = dict()
-            with open(Path("settings.json"), "r") as openfile:
+            with open(self.settigsFile, "r") as openfile:
                 self.settings = json.load(openfile)
             for key in self.settings:
                 self.info[key] = self.settings[key]
@@ -291,7 +308,7 @@ class MainWindow(QMainWindow):
             self.settings["left_state"] = self.info["left_state"]
             self.settings["right_state"] = self.info["right_state"]
 
-            with open(Path("settings.json"), "w") as outfile:
+            with open(self.settigsFile, "w") as outfile:
                 json.dump(self.settings, outfile)
                 
     def load_widgets(self):
@@ -629,8 +646,8 @@ class PGNDialog(QDialog):
         self.pgn_data = openPgnFile(fileName)
         self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move], False)
         self.board = draw_board(self.ext_fen,self.pgn_data["symbols"][self.active_move],self.pgn_data["arrows"][self.active_move])
-        self.board.save("temp_board.jpg")
-        pixmap = QPixmap("temp_board.jpg")
+        self.board.save(self.temp_board_path)
+        pixmap = QPixmap(self.temp_board_path)
 
         self.headerLayout = QGridLayout()
         self.headerLabel = list()
@@ -818,8 +835,8 @@ class PGNDialog(QDialog):
     def refresh(self):
         self.ext_fen = unpack_fen(self.pgn_data["fens"][self.active_move],False)
         self.board = draw_board(self.ext_fen,self.pgn_data["symbols"][self.active_move],self.pgn_data["arrows"][self.active_move])
-        self.board.save("temp_board.jpg")
-        pixmap = QPixmap("temp_board.jpg")
+        self.board.save(self.temp_board_path)
+        pixmap = QPixmap(self.temp_board_path)
         self.boardLabel.setPixmap(pixmap)
 
         for label in self.moveLabels:
@@ -1352,10 +1369,9 @@ class EditDialog(QDialog):
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
         self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
         self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
-        temp_board_path = os.path.join(self.current_dir,"temp_board.jpg")
-        self.board_img.save(temp_board_path)
+        self.board_img.save(self.temp_board_path)
         # raffraichit le pixmap à afficher dans le label
-        new_pixmap = QPixmap(temp_board_path)
+        new_pixmap = QPixmap(self.temp_board_path)
         self.label.setPixmap(new_pixmap)
 
         self.fen = repack_fen(self.ext_fen)
@@ -1673,7 +1689,7 @@ class PropDialog(QDialog):
         self.settings["left_state"] = self.info["left_state"]
         self.settings["right_state"] = self.info["right_state"]
 
-        with open(Path("settings.json"), "w") as outfile:
+        with open(self.parent().settigsFile, "w") as outfile:
             json.dump(self.settings, outfile)
 
     def new_exit(self):
@@ -1741,8 +1757,7 @@ class ViewDialog(QDialog):
         screen_geometry = screen.availableGeometry()
         screen_height = screen_geometry.height()
 
-        temp_jpg = "temp.jpg"
-        pixmap = QPixmap(temp_jpg)
+        pixmap = QPixmap(self.parent().info["temp"])
 
         self.label = QLabel()
         if self.parent().info["format_text"] == "portrait":
