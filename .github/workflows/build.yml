@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     branches:
-      - main
+      - main   # Si tu veux construire aussi lors des PRs
 
 jobs:
   build:
@@ -38,6 +38,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mon_programme-${{ matrix.os }}
-          path: dist/mon_programme*
+          name: EZDraw-${{ matrix.os }}
+          path: dist/EZDraw*
 
