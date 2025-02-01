@@ -33,7 +33,18 @@ jobs:
 
       - name: Build Binary
         run: |
-          pyinstaller --onefile --add-data "ressources:ressources" --name=EZDraw main.py
+          pyinstaller --onedir --add-data "ressources:ressources" --name=EZDraw main.py
+
+      - name: Test binary execution
+        run: ./dist/EZDraw --help
+
+      - name: Test binary execution (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: ./dist/EZDraw --help
+
+      - name: Test binary execution (Windows)
+        if: runner.os == 'Windows'
+        run: .\dist\EZDraw.exe --help
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
