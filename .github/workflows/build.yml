@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Binary
         run: |
-          pyinstaller --onefile --name=EZDraw main.py
+          pyinstaller --onefile --add-data "ressources:ressources" --name=EZDraw main.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
