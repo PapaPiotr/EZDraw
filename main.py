@@ -1369,9 +1369,9 @@ class EditDialog(QDialog):
         self.symbols_img.paste(self.arrows_img, (0,0), self.arrows_img)
         self.pieces_img.paste(self.symbols_img, (0,0), self.symbols_img)
         self.board_img.paste(self.pieces_img, (0,0), self.pieces_img)
-        self.board_img.save(self.temp_board_path)
+        self.board_img.save(self.parent().temp_board_path)
         # raffraichit le pixmap à afficher dans le label
-        new_pixmap = QPixmap(self.temp_board_path)
+        new_pixmap = QPixmap(self.parent().temp_board_path)
         self.label.setPixmap(new_pixmap)
 
         self.fen = repack_fen(self.ext_fen)
