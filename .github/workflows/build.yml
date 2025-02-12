@@ -33,12 +33,12 @@ jobs:
       - name: Build binary (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          pyinstaller --windowed --onefile --add-data "resources:resources" main.py
+          pyinstaller --windowed --onefile --add-data "resources:resources" --name=EZDraw main.py
 
       - name: Build binary (Windows)
         if: runner.os == 'Windows'
         run: |
-          pyinstaller --windowed --onefile --add-data "resources;resources" main.py
+          pyinstaller --windowed --onefile --add-data "resources;resources" --name=EZDraw main.py
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
