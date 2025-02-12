@@ -26,9 +26,9 @@ EZDraw allows to save and load forms so you don't have to rebuild a page from sc
 
 This program uses the following libraries:
 
-- Pillow 10.3.0
-- PyQt6 6.4.2
-- requests 2.31.0
+- Pillow
+- PyQt6
+- requests
 
 ## License
 
@@ -68,9 +68,9 @@ EZDraw permet de sauvegarder et charger des formulaires afin de ne pas avoir à 
 ## Dépendances
 
 Ce programme utilise les bibliothèques suivantes :
-- Pillow 10.3.0
-- PyQt6 6.4.2
-- requests 2.31.0
+- Pillow
+- PyQt6
+- requests
 
 ## Licence
 
