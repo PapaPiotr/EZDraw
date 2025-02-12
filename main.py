@@ -72,11 +72,11 @@ class MainWindow(QMainWindow):
             self.current_dir = sys._MEIPASS
         else:
             self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.ressources_dir = os.path.join(self.current_dir, "ressources")
+        self.resources_dir = os.path.join(self.current_dir, "resources")
         self.currentFileName = "Nouveau document"
         self.newFileName = ""
         self.setWindowTitle(self.currentFileName + " | EZDraw Diagramm Generator")
-        self.setWindowIcon(QIcon(os.path.join(self.ressources_dir, "chess.png")))
+        self.setWindowIcon(QIcon(os.path.join(self.resources_dir, "chess.png")))
         
         self.mainWidget = QWidget()
 
@@ -99,31 +99,31 @@ class MainWindow(QMainWindow):
         
         # Définition des actions
         if self.theme == "light":
-            self.act_New = QAction(QIcon(os.path.join(self.ressources_dir, "add-document.png")), "Nouveau document", self)
-            self.act_Open = QAction(QIcon(os.path.join(self.ressources_dir, "folder-open.png")), "Ouvrir un formulaire", self)
-            self.act_Save = QAction(QIcon(os.path.join(self.ressources_dir, "save.png")), "Enregistrer le formulaire", self)
-            self.act_Save_as = QAction(QIcon(os.path.join(self.ressources_dir, "save-as.png")), "Enregistrer le formulaire sous", self)
-            self.act_PGN = QAction(QIcon(os.path.join(self.ressources_dir, "overview.png")), "Ouvrir un fichier pgn", self)
-            self.act_Img = QAction(QIcon(os.path.join(self.ressources_dir, "search.png")), "Aperçu de la page", self)
-            self.act_Save_img = QAction(QIcon(os.path.join(self.ressources_dir, "image.png")), "Enregistrer la page", self)
-            self.act_Save_diags = QAction(QIcon(os.path.join(self.ressources_dir, "images.png")), "Enregistrer les diagrammes", self)
-            self.act_Settings = QAction(QIcon(os.path.join(self.ressources_dir, "settings.png")), "Paramètres", self)
-            self.act_Help = QAction(QIcon(os.path.join(self.ressources_dir, "help.png")), "Aide", self)
-            self.act_About = QAction(QIcon(os.path.join(self.ressources_dir, "info.png")), "À propos", self)
-            self.act_Exit = QAction(QIcon(os.path.join(self.ressources_dir, "power.png")), "Quitter", self)
+            self.act_New = QAction(QIcon(os.path.join(self.resources_dir, "add-document.png")), "Nouveau document", self)
+            self.act_Open = QAction(QIcon(os.path.join(self.resources_dir, "folder-open.png")), "Ouvrir un formulaire", self)
+            self.act_Save = QAction(QIcon(os.path.join(self.resources_dir, "save.png")), "Enregistrer le formulaire", self)
+            self.act_Save_as = QAction(QIcon(os.path.join(self.resources_dir, "save-as.png")), "Enregistrer le formulaire sous", self)
+            self.act_PGN = QAction(QIcon(os.path.join(self.resources_dir, "overview.png")), "Ouvrir un fichier pgn", self)
+            self.act_Img = QAction(QIcon(os.path.join(self.resources_dir, "search.png")), "Aperçu de la page", self)
+            self.act_Save_img = QAction(QIcon(os.path.join(self.resources_dir, "image.png")), "Enregistrer la page", self)
+            self.act_Save_diags = QAction(QIcon(os.path.join(self.resources_dir, "images.png")), "Enregistrer les diagrammes", self)
+            self.act_Settings = QAction(QIcon(os.path.join(self.resources_dir, "settings.png")), "Paramètres", self)
+            self.act_Help = QAction(QIcon(os.path.join(self.resources_dir, "help.png")), "Aide", self)
+            self.act_About = QAction(QIcon(os.path.join(self.resources_dir, "info.png")), "À propos", self)
+            self.act_Exit = QAction(QIcon(os.path.join(self.resources_dir, "power.png")), "Quitter", self)
         else:
-            self.act_New = QAction(QIcon(os.path.join(self.ressources_dir, "add-document-light.png")), "Nouveau document", self)
-            self.act_Open = QAction(QIcon(os.path.join(self.ressources_dir, "folder-open-light.png")), "Ouvrir un formulaire", self)
-            self.act_Save = QAction(QIcon(os.path.join(self.ressources_dir, "save-light.png")), "Enregistrer le formulaire", self)
-            self.act_Save_as = QAction(QIcon(os.path.join(self.ressources_dir, "save-as-light.png")), "Enregistrer le formulaire sous", self)
-            self.act_PGN = QAction(QIcon(os.path.join(self.ressources_dir, "overview-light.png")), "Ouvrir un fichier pgn", self)
-            self.act_Img = QAction(QIcon(os.path.join(self.ressources_dir, "search-light.png")), "Aperçu de la page", self)
-            self.act_Save_img = QAction(QIcon(os.path.join(self.ressources_dir, "image-light.png")), "Enregistrer la page", self)
-            self.act_Save_diags = QAction(QIcon(os.path.join(self.ressources_dir, "images-light.png")), "Enregistrer les diagrammes", self)
-            self.act_Settings = QAction(QIcon(os.path.join(self.ressources_dir, "settings-light.png")), "Paramètres", self)
-            self.act_Help = QAction(QIcon(os.path.join(self.ressources_dir, "help-light.png")), "Aide", self)
-            self.act_About = QAction(QIcon(os.path.join(self.ressources_dir, "info-light.png")), "À propos", self)
-            self.act_Exit = QAction(QIcon(os.path.join(self.ressources_dir, "power-light.png")), "Quitter", self)
+            self.act_New = QAction(QIcon(os.path.join(self.resources_dir, "add-document-light.png")), "Nouveau document", self)
+            self.act_Open = QAction(QIcon(os.path.join(self.resources_dir, "folder-open-light.png")), "Ouvrir un formulaire", self)
+            self.act_Save = QAction(QIcon(os.path.join(self.resources_dir, "save-light.png")), "Enregistrer le formulaire", self)
+            self.act_Save_as = QAction(QIcon(os.path.join(self.resources_dir, "save-as-light.png")), "Enregistrer le formulaire sous", self)
+            self.act_PGN = QAction(QIcon(os.path.join(self.resources_dir, "overview-light.png")), "Ouvrir un fichier pgn", self)
+            self.act_Img = QAction(QIcon(os.path.join(self.resources_dir, "search-light.png")), "Aperçu de la page", self)
+            self.act_Save_img = QAction(QIcon(os.path.join(self.resources_dir, "image-light.png")), "Enregistrer la page", self)
+            self.act_Save_diags = QAction(QIcon(os.path.join(self.resources_dir, "images-light.png")), "Enregistrer les diagrammes", self)
+            self.act_Settings = QAction(QIcon(os.path.join(self.resources_dir, "settings-light.png")), "Paramètres", self)
+            self.act_Help = QAction(QIcon(os.path.join(self.resources_dir, "help-light.png")), "Aide", self)
+            self.act_About = QAction(QIcon(os.path.join(self.resources_dir, "info-light.png")), "À propos", self)
+            self.act_Exit = QAction(QIcon(os.path.join(self.resources_dir, "power-light.png")), "Quitter", self)
             
 
         self.act_New.setStatusTip("Nouveau document")
@@ -864,7 +864,7 @@ class EditDialog(QDialog):
             self.current_dir = sys._MEIPASS
         else:
             self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.arrows_dir = os.path.join(self.current_dir, "ressources")
+        self.arrows_dir = os.path.join(self.current_dir, "resources")
         # identification du fen a éditer
         self.diag_id = self.parent().info["active_editor"]
 
@@ -882,11 +882,11 @@ class EditDialog(QDialog):
             self.printed_arrows = flip_arrows(self.printed_arrows)
 
         # creation de l'image du plateau
-        self.board_dir = os.path.join(self.current_dir, 'ressources')
+        self.board_dir = os.path.join(self.current_dir, 'resources')
         empty_board_path = os.path.join(self.board_dir, 'empty_board.jpg')
 
         # informations sur les boutons, le dictionnaire sera envoyé à la fonction create_button
-        pieces_dir = os.path.join(self.current_dir, 'ressources')
+        pieces_dir = os.path.join(self.current_dir, 'resources')
         self.buttons = list()
         self.infos = {}
         bK_path = os.path.join(pieces_dir, 'bK.png')
@@ -914,7 +914,7 @@ class EditDialog(QDialog):
         wP_path = os.path.join(pieces_dir, 'wP.png')
         self.infos["P"]= wP_path
 
-        symbols_dir = os.path.join(self.current_dir, 'ressources')
+        symbols_dir = os.path.join(self.current_dir, 'resources')
         bt_path = os.path.join(symbols_dir, 'bt.png')
         self.infos["t"]= bt_path
         by_path = os.path.join(symbols_dir, 'by.png')

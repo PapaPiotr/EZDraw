@@ -361,7 +361,7 @@ def draw_board(fen, sym, arr):
         arr_x = int(a[1]/75)*177
         arr_y = int(a[2]/75)*177
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        arrows_dir = os.path.join(current_dir, 'ressources')
+        arrows_dir = os.path.join(current_dir, 'resources')
         arr_path = os.path.join(arrows_dir, a[0])
         arr_img = Image.open(arr_path).resize((int(a[0][1])*177,int(a[0][2])*177))
         board.paste(arr_img,(arr_x,arr_y),arr_img)
@@ -369,10 +369,10 @@ def draw_board(fen, sym, arr):
 
 def draw_square(i, j, p, s):
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    board_dir = os.path.join(current_dir, 'ressources')
+    board_dir = os.path.join(current_dir, 'resources')
     ds_path = os.path.join(board_dir, 'ds.jpg')
 
-    pieces_dir = os.path.join(current_dir, 'ressources')
+    pieces_dir = os.path.join(current_dir, 'resources')
     bP_path = os.path.join(pieces_dir, 'bP.png')
     bR_path = os.path.join(pieces_dir, 'bR.png')
     bN_path = os.path.join(pieces_dir, 'bN.png')
@@ -424,7 +424,7 @@ def draw_square(i, j, p, s):
         square_img.paste(piece_img, (0,0), piece_img)
 
 
-    symbols_dir = os.path.join(current_dir, 'ressources')
+    symbols_dir = os.path.join(current_dir, 'resources')
     bz_path = os.path.join(symbols_dir, 'bz.png')
     be_path = os.path.join(symbols_dir, 'be.png')
     bd_path = os.path.join(symbols_dir, 'bd.png')
@@ -576,7 +576,7 @@ def draw_index(i_state, index, c_state, color, w, h):
     index = str(index)
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    fonts_dir = os.path.join(current_dir, 'ressources')
+    fonts_dir = os.path.join(current_dir, 'resources')
     freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
     font = ImageFont.truetype(freeSerif_path, size = fontsize)
 
@@ -590,7 +590,7 @@ def draw_index(i_state, index, c_state, color, w, h):
 
 
     if c_state:
-        symbols_dir = os.path.join(current_dir, 'ressources')
+        symbols_dir = os.path.join(current_dir, 'resources')
         if color == 'b':
             bDot_path = os.path.join(symbols_dir, 'bDot.png')
             color_img = Image.open(bDot_path)
@@ -606,7 +606,7 @@ def draw_legend(legend, w, h, margin):
     fontsize = 113
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    fonts_dir = os.path.join(current_dir, 'ressources')
+    fonts_dir = os.path.join(current_dir, 'resources')
     freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
     font = ImageFont.truetype(freeSerif_path, size = fontsize)
 
@@ -645,7 +645,7 @@ def draw_coord_h(w, h, flip, color):
     fontsize = 100
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    fonts_dir = os.path.join(current_dir, 'ressources')
+    fonts_dir = os.path.join(current_dir, 'resources')
     freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
     font = ImageFont.truetype(freeSerif_path, size = fontsize)
     coords = 'abcdefgh'
@@ -672,7 +672,7 @@ def draw_coord_v(w, h, flip, color):
     fontsize = 100
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    fonts_dir = os.path.join(current_dir, 'ressources')
+    fonts_dir = os.path.join(current_dir, 'resources')
     freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
     font = ImageFont.truetype(freeSerif_path, size = fontsize)
     coords = '87654321'
@@ -708,7 +708,7 @@ def draw_page(orient, t_state, title, n_state, num, col, margin, boxes):
     fontsize = 120
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    fonts_dir = os.path.join(current_dir, 'ressources')
+    fonts_dir = os.path.join(current_dir, 'resources')
     freeSerif_path = os.path.join(fonts_dir, 'FreeSerif.ttf')
     num_font = ImageFont.truetype(freeSerif_path, size = 80)
     title_font = ImageFont.truetype(freeSerif_path, size = fontsize)
