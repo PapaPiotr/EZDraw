@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
 
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_board_file:
             self.temp_board_path = temp_board_file.name
+        self.form = dict()
         self.theme = checkTheme()
         self.settigsFile = getSettingsFile()
         print(self.settigsFile)
@@ -395,7 +396,7 @@ class MainWindow(QMainWindow):
         if self.newFileName == "":
             pass
         else:
-            if not re.search('\\.json$', self.newFileName):
+            if not re.search('.json$', self.newFileName):
                 self.newFileName += '.json'
             if os.path.basename(self.newFileName) != "":
                 self.currentFileName = self.newFileName
